@@ -1,0 +1,1238 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b4a7d">
+<title>Torneo de Pádel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef2f6; --card:#ffffff; --ink:#0e1a2b; --mut:#5a6b80; --line:#d9e1ea;
+  --court:#0b4a7d; --court-2:#08365c; --pri:#0b4a7d; --pri-ink:#ffffff;
+  --ball:#d9f24a; --ball-ink:#1c2600;
+  --warn:#8a4b00; --warn-bg:#fff3dc; --warn-line:#f0cf92;
+  --bad:#b42318; --ok:#0f7a4d; --ok-bg:#e3f6ec;
+  --r:14px; --shadow:0 1px 2px rgba(14,26,43,.06),0 8px 24px rgba(14,26,43,.07);
+  --head:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#08111c; --card:#101d2c; --ink:#e8eff7; --mut:#8fa3b8; --line:#1d3047;
+    --pri:#6db4f2; --pri-ink:#04223d; --warn:#f3be68; --warn-bg:#2c2110; --warn-line:#5a4220;
+    --bad:#ff8f80; --ok:#62dca2; --ok-bg:#0f2a1f; --shadow:none; }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 var(--body);padding-bottom:calc(88px + env(safe-area-inset-bottom))}
+body.noscroll{overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--head);margin:0;letter-spacing:.005em;line-height:1.05}
+.wrap{max-width:880px;margin:0 auto;padding:0 16px}
+
+/* ---------- Cabecera ---------- */
+.hero{position:relative;overflow:hidden;background:linear-gradient(160deg,var(--court),var(--court-2));color:#fff;padding:calc(env(safe-area-inset-top) + 22px) 0 16px}
+.hero svg.court{position:absolute;right:-6%;top:0;height:100%;width:78%;min-width:520px;opacity:.9;pointer-events:none}
+.hero .wrap{position:relative}
+.hero-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.hero h1{font-size:clamp(34px,8vw,54px);font-weight:800}
+.hero .fecha{margin:6px 0 0;font-size:18px;font-weight:500;opacity:.95}
+.hero .lugar{margin:0;font-size:15px;opacity:.75}
+.lock{flex:none;width:46px;height:46px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:rgba(255,255,255,.1);color:#fff;display:grid;place-items:center;cursor:pointer;transition:background .15s,color .15s,transform .15s}
+.lock:hover{background:rgba(255,255,255,.2)}
+.lock.on{background:var(--ball);color:var(--ball-ink);border-color:var(--ball)}
+.lock svg{width:22px;height:22px}
+.status{margin-top:14px;font-size:13px;display:flex;align-items:center;gap:8px;opacity:.9}
+.dot{width:9px;height:9px;border-radius:50%;background:#7ee2a8;flex:none}
+.dot.off{background:#ffb454}.dot.demo{background:var(--ball)}
+
+.adminbar{background:var(--ball);color:var(--ball-ink);position:sticky;top:0;z-index:30;border-bottom:2px solid rgba(0,0,0,.12)}
+.abar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:8px;padding-bottom:8px;flex-wrap:wrap}
+.abar b{font-family:var(--head);font-size:20px;font-weight:700}
+.abtns{display:flex;gap:6px;flex-wrap:wrap}
+.adminbar .btn{background:rgba(255,255,255,.55);border-color:rgba(0,0,0,.15);color:var(--ball-ink)}
+.adminbar .btn.dark{background:var(--ball-ink);color:#fff;border-color:var(--ball-ink)}
+
+/* ---------- Navegación ---------- */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:var(--card);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;padding:6px 2px;border-radius:12px;color:var(--mut);cursor:pointer;font-size:12.5px;font-weight:500}
+.tabs button svg{width:24px;height:24px}
+.tabs button[aria-current=page]{color:var(--pri);background:color-mix(in srgb,var(--pri) 12%,transparent);font-weight:600}
+@media(min-width:720px){
+  body{padding-bottom:40px}
+  .tabs{position:sticky;top:0;bottom:auto;justify-content:center;gap:6px;border-top:0;border-bottom:1px solid var(--line);padding:8px}
+  .adminbar{top:62px}
+  .tabs button{flex:none;flex-direction:row;gap:8px;padding:9px 18px;font-size:16px}
+  .tabs button svg{width:20px;height:20px}
+}
+
+/* ---------- Contenido ---------- */
+#view{padding-top:20px;padding-bottom:30px}
+.sec h2{font-size:32px;font-weight:700;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.vacio{padding:34px 20px;text-align:center;color:var(--mut)}
+.vacio b{display:block;color:var(--ink);font-family:var(--head);font-size:22px;margin-bottom:4px}
+.note{white-space:pre-line;color:var(--mut);border-left:3px solid var(--ball);padding:2px 0 2px 12px;margin:18px 0 0}
+
+.timeline{list-style:none;margin:0;padding:0;position:relative}
+.timeline li{display:grid;grid-template-columns:76px 1fr;gap:14px;padding:0 0 18px;position:relative}
+.timeline li::before{content:"";position:absolute;left:84px;top:8px;bottom:-8px;width:2px;background:var(--line)}
+.timeline li:last-child::before{display:none}
+.timeline time{font-family:var(--head);font-weight:700;font-size:25px;line-height:1.05;text-align:right;padding-top:2px;color:var(--pri)}
+.timeline .body{position:relative;padding-left:26px}
+.timeline .body::before{content:"";position:absolute;left:-1px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--card);border:3px solid var(--pri)}
+.timeline b{font-size:18px;font-weight:600}
+.timeline p{margin:2px 0 0;color:var(--mut)}
+
+.menu-g{margin-bottom:22px}
+.menu-g h3{font-size:24px;font-weight:700;color:var(--pri);padding-bottom:6px;border-bottom:2px solid var(--line);margin-bottom:8px}
+.dish{padding:8px 0}
+.dish b{font-weight:600;font-size:18px}
+.dish p{margin:0;color:var(--mut);font-size:15px}
+
+/* Partidos */
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 14px;cursor:pointer;font-size:15px}
+.chip[aria-pressed=true]{background:var(--court);border-color:var(--court);color:#fff}
+@media(prefers-color-scheme:dark){.chip[aria-pressed=true]{background:var(--pri);color:var(--pri-ink);border-color:var(--pri)}}
+.who{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--mut);margin-left:auto}
+.who select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:6px 8px;max-width:180px}
+.progress{display:flex;align-items:center;gap:12px;margin-bottom:16px;font-size:15px;color:var(--mut)}
+.pbar{flex:1;height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--ball);border-right:2px solid rgba(0,0,0,.1);transition:width .4s}
+.ronda{margin:22px 0 10px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.ronda h3{font-size:28px;font-weight:700}
+.ronda .rh{font-family:var(--head);font-size:22px;font-weight:600;color:var(--pri)}
+.ronda .desc{font-size:14px;color:var(--mut);flex-basis:100%}
+.matches{display:grid;gap:10px}
+@media(min-width:640px){.matches{grid-template-columns:1fr 1fr}}
+.match{padding:12px 14px;display:flex;flex-direction:column;gap:8px;border-left:5px solid var(--line)}
+.match.jugado{border-left-color:var(--ok)}
+.match.mio{box-shadow:0 0 0 2px var(--ball),var(--shadow)}
+.mm{display:flex;justify-content:space-between;font-size:14px;color:var(--mut)}
+.mm b{font-family:var(--head);font-size:19px;color:var(--ink);font-weight:700}
+.team{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0}
+.team span{font-size:17px}
+.team .sc{font-family:var(--head);font-size:34px;font-weight:700;line-height:1;min-width:34px;text-align:right;color:var(--mut)}
+.team.win span{font-weight:600}
+.team.win .sc{color:var(--ink);text-shadow:0 3px 0 var(--ball)}
+.team + .team{border-top:1px dashed var(--line)}
+.mact{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.por{font-size:13px;color:var(--mut);margin-right:auto}
+
+/* Estadísticas */
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;align-items:end}
+.pod{padding:12px 8px;text-align:center}
+.pod .m{font-size:26px}
+.pod b{display:block;font-family:var(--head);font-size:21px;line-height:1.1;font-weight:700;word-break:break-word}
+.pod .v{font-family:var(--head);font-size:36px;font-weight:800;line-height:1;color:var(--pri)}
+.pod small{color:var(--mut);display:block}
+.pod.p1{padding-top:22px;padding-bottom:18px;background:linear-gradient(var(--card),var(--card)) padding-box;border-color:var(--ball);border-width:2px}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{font-size:13px;color:var(--mut);font-weight:500;text-align:right;padding:8px 6px;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 6px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.tbl th:nth-child(2),.tbl td:nth-child(2){text-align:left;width:100%;max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbl td:first-child{font-family:var(--head);font-weight:700;font-size:19px;color:var(--mut);width:26px;text-align:left}
+.tbl tr.yo td{background:color-mix(in srgb,var(--ball) 28%,transparent)}
+.tbl td.k{font-weight:700;color:var(--ink)}
+.scroll{overflow-x:auto;padding:4px 10px}
+.legend{font-size:13px;color:var(--mut);margin:8px 2px 0}
+.fun{display:grid;gap:10px;margin-top:16px}
+@media(min-width:640px){.fun{grid-template-columns:1fr 1fr}}
+.fun .card{padding:12px 14px}
+.fun small{color:var(--mut);display:block;font-size:14px}
+.fun b{font-size:18px;font-weight:600}
+
+/* Controles */
+.btn{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 16px;cursor:pointer;font-weight:600;transition:transform .08s,background .15s}
+.btn:active{transform:scale(.97)}
+.btn.sm{padding:6px 12px;font-size:14px;border-radius:10px}
+.btn.pri{background:var(--court);border-color:var(--court);color:#fff}
+@media(prefers-color-scheme:dark){.btn.pri{background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+@media(prefers-color-scheme:dark){.btn.danger{color:#2b0500}}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+:focus-visible{outline:3px solid var(--ball);outline-offset:2px;box-shadow:0 0 0 5px rgba(0,0,0,.35)}
+input,select,textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 10px;width:100%;min-width:0}
+textarea{resize:vertical}
+label.fld{display:block;font-size:14px;color:var(--mut);margin:12px 0 0}
+label.fld input,label.fld select,label.fld textarea{margin-top:4px;color:var(--ink)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.erow{display:grid;grid-template-columns:80px 1fr;gap:6px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:8px}
+.erow.m{grid-template-columns:1fr}
+.erow .full{grid-column:1/-1}
+.ebtns{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end}
+.ebtns button,.x{border:1px solid var(--line);background:var(--card);border-radius:8px;width:36px;height:34px;cursor:pointer}
+.savebar{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);margin-top:12px}
+@media(min-width:720px){.savebar{bottom:12px}}
+.savebar span{margin-right:auto;font-size:14px;color:var(--mut)}
+.savebar span.dirty{color:var(--warn);font-weight:600}
+
+.banner{border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:15px;border:1px solid}
+.banner.warn{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn)}
+.banner.info{background:var(--ok-bg);border-color:transparent;color:var(--ok)}
+.brow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+/* Modales */
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(5,12,22,.62);display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--card);width:100%;max-width:520px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));animation:up .2s ease-out}
+@media(min-width:640px){.overlay{align-items:center}.modal{border-radius:22px}}
+@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.modal h3{font-size:30px;font-weight:700}
+.modal .sub{margin:2px 0 10px;color:var(--mut)}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.actions .btn{flex:1 1 auto}
+.err{color:var(--bad);font-size:15px;margin:8px 0 0}
+.hint{font-size:14px;color:var(--mut);min-height:20px;margin:8px 0 0;text-align:center}
+.hint.bad{color:var(--bad)}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:8px}
+.vsx{font-family:var(--head);font-size:20px;color:var(--mut);font-weight:700}
+.side .names{text-align:center;font-size:17px;font-weight:600;line-height:1.2;margin-bottom:8px;min-height:42px}
+.side .names i{font-style:normal;color:var(--mut);font-weight:400}
+.step{display:grid;grid-template-columns:44px 1fr 44px;gap:4px}
+.step button{border:1px solid var(--line);background:var(--card);border-radius:10px;font-size:24px;cursor:pointer;line-height:1}
+.step input{text-align:center;font-family:var(--head);font-size:36px;font-weight:700;padding:4px 2px;min-width:0}
+.jrow{display:grid;grid-template-columns:26px 1fr 36px;gap:6px;align-items:center;margin-bottom:6px}
+.jrow .idx{color:var(--mut);font-size:14px;text-align:right}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.cmp div{border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.cmp small{display:block;color:var(--mut)}
+.cmp b{font-family:var(--head);font-size:30px}
+.hist{font-size:14px;border-bottom:1px solid var(--line);padding:8px 0}
+.hist small{color:var(--mut);display:block}
+
+#toast{position:fixed;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));z-index:200;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+@media(min-width:720px){#toast{bottom:30px}}
+.toast{background:#0e1a2b;color:#fff;padding:10px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:90vw;transition:opacity .4s,transform .4s;border:1px solid rgba(255,255,255,.15)}
+.toast.ok{background:#0f6b43}.toast.err{background:#a3271b}
+.toast.out{opacity:0;transform:translateY(8px)}
+.cargando{padding:50px 0;text-align:center;color:var(--mut)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<noscript>Esta página necesita JavaScript.</noscript>
+<div id="app"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   CONFIGURACIÓN
+   Pega aquí los datos de tu app web de Firebase (ver README.md).
+   Mientras apiKey esté vacío, la web funciona en MODO DEMO (datos solo
+   en este navegador, PIN de administrador: 1234).
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: '',
+  authDomain: '',
+  projectId: '',
+  storageBucket: '',
+  messagingSenderId: '',
+  appId: ''
+};
+const FIREBASE_VERSION = '10.14.1';
+const DEMO_PIN = '1234';
+
+/* ===== PURE:START (lógica sin DOM, probada con tests) ===== */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+
+function sumaMin(hhmm, min){
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '');
+  if(!m) return '';
+  let t = (+m[1]) * 60 + (+m[2]) + min;
+  t = ((t % 1440) + 1440) % 1440;
+  return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+}
+
+function barajar(a, rng){
+  const r = a.slice();
+  for(let i = r.length - 1; i > 0; i--){
+    const j = Math.floor(rng() * (i + 1));
+    [r[i], r[j]] = [r[j], r[i]];
+  }
+  return r;
+}
+
+/* Calendario de americano: parejas rotativas, repartiendo descansos y
+   minimizando repetir compañero y rival. Devuelve [{ronda, matches:[{a:[x,y], b:[z,w]}]}] */
+function generarCalendario(ids, pistas, rondas, rng = Math.random){
+  const n = ids.length;
+  const porRonda = Math.min(Math.floor(n / 4), pistas);
+  if(porRonda < 1) throw new Error('Se necesitan al menos 4 jugadores y 1 pista');
+  const k = (x, y) => x < y ? x + '|' + y : y + '|' + x;
+  let mejor = null;
+  for(let intento = 0; intento < 12; intento++){
+    const partner = {}, opp = {}, jugados = {};
+    ids.forEach(i => jugados[i] = 0);
+    let total = 0;
+    const out = [];
+    for(let r = 1; r <= rondas; r++){
+      const orden = barajar(ids, rng).sort((x, y) => jugados[x] - jugados[y]);
+      const juegan = orden.slice(0, porRonda * 4);
+      let best = null;
+      for(let t = 0; t < 500; t++){
+        const s = barajar(juegan, rng);
+        let c = 0;
+        for(let g = 0; g < porRonda; g++){
+          const [a, b, x, y] = s.slice(g * 4, g * 4 + 4);
+          const p1 = partner[k(a, b)] || 0, p2 = partner[k(x, y)] || 0;
+          c += (p1 * p1 + p2 * p2) * 10;
+          for(const u of [a, b]) for(const v of [x, y]){ const q = opp[k(u, v)] || 0; c += q * q * 3; }
+        }
+        if(!best || c < best.c){ best = {c, s}; if(c === 0) break; }
+      }
+      const matches = [];
+      for(let g = 0; g < porRonda; g++){
+        const [a, b, x, y] = best.s.slice(g * 4, g * 4 + 4);
+        partner[k(a, b)] = (partner[k(a, b)] || 0) + 1;
+        partner[k(x, y)] = (partner[k(x, y)] || 0) + 1;
+        for(const u of [a, b]) for(const v of [x, y]) opp[k(u, v)] = (opp[k(u, v)] || 0) + 1;
+        matches.push({a: [a, b], b: [x, y]});
+      }
+      juegan.forEach(i => jugados[i]++);
+      total += best.c;
+      out.push({ronda: r, matches});
+    }
+    if(!mejor || total < mejor.total) mejor = {total, out};
+    if(total === 0) break;
+  }
+  return mejor.out;
+}
+
+function marcadorValido(a, b, total){
+  if(!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0 || a > 99 || b > 99) return false;
+  return total > 0 ? a + b === total : true;
+}
+
+function calcularStats(jugadores, partidos, criterio){
+  const m = new Map(jugadores.map(j => [j.id, {id: j.id, nombre: j.nombre, pj: 0, pg: 0, pe: 0, pp: 0, pf: 0, pc: 0, dif: 0, avg: 0}]));
+  for(const p of partidos){
+    if(p.estado !== 'jugado') continue;
+    for(const [team, f, c] of [[p.a, p.puntosA, p.puntosB], [p.b, p.puntosB, p.puntosA]]){
+      for(const id of team){
+        const s = m.get(id);
+        if(!s) continue;
+        s.pj++; s.pf += f; s.pc += c; s.dif += f - c;
+        if(f > c) s.pg++; else if(f < c) s.pp++; else s.pe++;
+      }
+    }
+  }
+  const arr = [...m.values()];
+  arr.forEach(s => s.avg = s.pj ? s.pf / s.pj : 0);
+  const cmp = criterio === 'victorias' ? (x, y) => y.pg - x.pg || y.dif - x.dif || y.pf - x.pf
+            : criterio === 'media'     ? (x, y) => y.avg - x.avg || y.dif - x.dif || y.pf - x.pf
+            :                            (x, y) => y.pf - x.pf || y.dif - x.dif || y.pg - x.pg;
+  arr.sort((x, y) => cmp(x, y) || x.nombre.localeCompare(y.nombre, 'es'));
+  arr.forEach((s, i) => { s.pos = (i > 0 && cmp(arr[i - 1], s) === 0) ? arr[i - 1].pos : i + 1; });
+  return arr;
+}
+/* ===== PURE:END ===== */
+
+/* ---------------------------------------------------------------------
+   Utilidades
+   --------------------------------------------------------------------- */
+const $ = (s, r = document) => r.querySelector(s);
+const ls = {
+  get: k => { try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch(e){} }
+};
+function hace(ts){
+  if(!ts) return '';
+  const s = Math.max(0, (Date.now() - ts) / 1000);
+  if(s < 60) return 'hace un momento';
+  if(s < 3600) return `hace ${Math.floor(s / 60)} min`;
+  if(s < 86400) return `hace ${Math.floor(s / 3600)} h`;
+  return `hace ${Math.floor(s / 86400)} d`;
+}
+function toast(msg, tipo){
+  const el = document.createElement('div');
+  el.className = 'toast ' + (tipo || '');
+  el.textContent = msg;
+  $('#toast').appendChild(el);
+  setTimeout(() => el.classList.add('out'), 3300);
+  setTimeout(() => el.remove(), 3800);
+}
+
+class ConflictError extends Error {
+  constructor(actual){ super('conflicto de versión'); this.actual = actual; }
+}
+
+/* ---------------------------------------------------------------------
+   Backend DEMO (localStorage) – misma interfaz que el de Firebase
+   --------------------------------------------------------------------- */
+function crearBackendDemo(){
+  const KEY = 'padel-demo-v1';
+  const vacio = () => ({contenido: {}, partidos: {}, historial: []});
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || vacio(); } catch(e){ return vacio(); } };
+  const save = d => localStorage.setItem(KEY, JSON.stringify(d));
+  const subs = {contenido: new Set(), partidos: new Set()};
+  const lista = (d, col) => Object.entries(d[col]).map(([id, v]) => ({id, ...v}));
+  const emit = () => { const d = load(); for(const col of Object.keys(subs)) for(const cb of subs[col]) cb(lista(d, col)); };
+  window.addEventListener('storage', e => { if(e.key === KEY) emit(); });
+  return {
+    demo: true,
+    async esAdmin(){ return ls.get(KEY + '-admin') === '1'; },
+    async loginAdmin(pin){ if(pin === DEMO_PIN){ ls.set(KEY + '-admin', '1'); return true; } return false; },
+    async logoutAdmin(){ try { localStorage.removeItem(KEY + '-admin'); } catch(e){} },
+    listen(col, cb){ subs[col].add(cb); setTimeout(() => cb(lista(load(), col)), 0); return () => subs[col].delete(cb); },
+    async tx(ops, log){
+      const d = load();
+      for(const op of ops){
+        if(op.exp === undefined) continue;
+        const cur = d[op.col][op.id];
+        if((cur ? cur.rev || 0 : 0) !== op.exp) throw new ConflictError({col: op.col, id: op.id, data: cur ? {id: op.id, ...cur} : null});
+      }
+      for(const op of ops){
+        const col = d[op.col];
+        if(op.type === 'delete') delete col[op.id];
+        else if(op.type === 'set') col[op.id] = {...op.data, rev: (op.exp || 0) + 1};
+        else if(op.type === 'update') col[op.id] = {...col[op.id], ...op.data, rev: op.exp + 1};
+      }
+      if(log) d.historial.unshift({...log, ts: Date.now(), id: String(Date.now() + Math.random())});
+      d.historial = d.historial.slice(0, 200);
+      save(d); emit();
+    },
+    async historial(){ return load().historial; }
+  };
+}
+
+/* ---------------------------------------------------------------------
+   Backend FIREBASE (Firestore + auth anónima)
+   Todas las escrituras son transacciones con comprobación de "rev".
+   --------------------------------------------------------------------- */
+async function crearBackendFirebase(cfg){
+  const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/`;
+  const [A, Au, F] = await Promise.all([
+    import(base + 'firebase-app.js'),
+    import(base + 'firebase-auth.js'),
+    import(base + 'firebase-firestore.js')
+  ]);
+  const app = A.initializeApp(cfg);
+  const auth = Au.getAuth(app);
+  const db = F.getFirestore(app);
+  await new Promise((res, rej) => {
+    const un = Au.onAuthStateChanged(auth, u => { if(u){ un(); res(u); } });
+    Au.signInAnonymously(auth).catch(rej);
+  });
+  const uid = auth.currentUser.uid;
+  return {
+    demo: false,
+    async esAdmin(){
+      try { return (await F.getDoc(F.doc(db, 'admins', uid))).exists(); } catch(e){ return false; }
+    },
+    async loginAdmin(pin){
+      try { await F.setDoc(F.doc(db, 'admins', uid), {pin}); return true; } catch(e){ return false; }
+    },
+    async logoutAdmin(){
+      try { await F.deleteDoc(F.doc(db, 'admins', uid)); } catch(e){}
+    },
+    listen(col, cb){
+      return F.onSnapshot(F.collection(db, col),
+        snap => { S.error = ''; cb(snap.docs.map(d => ({id: d.id, ...d.data()}))); },
+        err => { console.error(err); S.error = err.code || err.message; renderStatus(); });
+    },
+    async tx(ops, log){
+      await F.runTransaction(db, async t => {
+        for(const op of ops){
+          if(op.exp === undefined) continue;
+          const snap = await t.get(F.doc(db, op.col, op.id));
+          const rev = snap.exists() ? (snap.data().rev || 0) : 0;
+          if(rev !== op.exp) throw new ConflictError({col: op.col, id: op.id, data: snap.exists() ? {id: op.id, ...snap.data()} : null});
+        }
+        for(const op of ops){
+          const ref = F.doc(db, op.col, op.id);
+          if(op.type === 'delete') t.delete(ref);
+          else if(op.type === 'set') t.set(ref, {...op.data, rev: (op.exp || 0) + 1});
+          else if(op.type === 'update') t.update(ref, {...op.data, rev: op.exp + 1});
+        }
+        if(log) t.set(F.doc(F.collection(db, 'historial')), {...log, ts: Date.now(), uid});
+      });
+    },
+    async historial(){
+      const q = F.query(F.collection(db, 'historial'), F.orderBy('ts', 'desc'), F.limit(80));
+      return (await F.getDocs(q)).docs.map(d => ({id: d.id, ...d.data()}));
+    }
+  };
+}
+
+/* ---------------------------------------------------------------------
+   Estado
+   --------------------------------------------------------------------- */
+let B = null;
+const S = {
+  cont: {}, part: {},
+  tab: 'horario', filtro: 'todos',
+  admin: false, edit: false,
+  drafts: {}, modal: null, busy: false,
+  yo: ls.get('padel-yo'), por: ls.get('padel-por'),
+  ready: {contenido: false, partidos: false},
+  error: ''
+};
+const DEF = {
+  config: {nombre: 'Torneo de Pádel', fecha: 'Viernes 23 de octubre', lugar: '', puntosPartido: 24, criterio: 'puntos'},
+  horario: {items: [], nota: ''},
+  menu: {items: [], nota: ''},
+  jugadores: {lista: []}
+};
+const EJEMPLO = {
+  horario: [
+    {hora: '17:00', titulo: 'Llegada y bienvenida', detalle: 'Reparto de pistas y explicación de las normas'},
+    {hora: '17:30', titulo: 'Empiezan las rondas', detalle: 'Mira tu pista y tu hora en la pestaña Partidos'},
+    {hora: '21:00', titulo: 'Cena', detalle: ''},
+    {hora: '22:00', titulo: 'Entrega de premios', detalle: ''}
+  ],
+  menu: [
+    {seccion: 'Entrantes', nombre: 'Por definir', notas: ''},
+    {seccion: 'Principal', nombre: 'Por definir', notas: ''},
+    {seccion: 'Postre', nombre: 'Por definir', notas: ''},
+    {seccion: 'Bebidas', nombre: 'Por definir', notas: ''}
+  ]
+};
+const D = id => S.cont[id] || {...clone(DEF[id]), rev: 0};
+const C = () => ({...DEF.config, ...(S.cont.config || {})});
+const jugadoresList = () => D('jugadores').lista || [];
+const nom = id => (jugadoresList().find(j => j.id === id) || {nombre: '¿?'}).nombre;
+const partidosArr = () => Object.values(S.part).sort((x, y) => x.ronda - y.ronda || x.pista - y.pista);
+const equipo = ids => ids.map(nom).join(' y ');
+const etiquetaPartido = p => `R${p.ronda} P${p.pista}: ${equipo(p.a)} vs ${equipo(p.b)}`;
+
+/* ---------------------------------------------------------------------
+   Iconos
+   --------------------------------------------------------------------- */
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const IC = {
+  lock: svg('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+  unlock: svg('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.6-1.7"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  racket: svg('<ellipse cx="9.5" cy="9.5" rx="6" ry="6.6" transform="rotate(-45 9.5 9.5)"/><path d="M14 14l6 6"/><path d="M7 8h.01M10 7h.01M8 11h.01M11 10h.01"/>'),
+  fork: svg('<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-2 2-3 4.500-3 7 0 1.500 1 2.500 3 2.500V21"/>'),
+  chart: svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')
+};
+const TABS = [
+  {id: 'horario', t: 'Horario', ic: IC.clock},
+  {id: 'partidos', t: 'Partidos', ic: IC.racket},
+  {id: 'menu', t: 'Cena', ic: IC.fork},
+  {id: 'stats', t: 'Estadísticas', ic: IC.chart}
+];
+const COURT = `<svg class="court" viewBox="0 0 200 100" preserveAspectRatio="xMaxYMid slice" aria-hidden="true" fill="none" stroke="#fff" stroke-opacity=".24" stroke-width="1.2">
+<rect x="6" y="6" width="188" height="88"/><path d="M100 6v88M33 6v88M167 6v88M33 50h134"/></svg>`;
+
+/* ---------------------------------------------------------------------
+   Pintado: estructura y cabecera
+   --------------------------------------------------------------------- */
+function renderShell(){
+  $('#app').innerHTML = `
+  <header class="hero">${COURT}<div class="wrap">
+    <div class="hero-row">
+      <div><h1 id="hTitle"></h1><p class="fecha" id="hFecha"></p><p class="lugar" id="hLugar"></p></div>
+      <button class="lock" id="lockBtn" data-act="lock" aria-label="Modo edición"></button>
+    </div>
+    <div class="status" id="status"></div>
+  </div></header>
+  <div id="adminbar"></div>
+  <nav class="tabs" id="tabs" aria-label="Secciones"></nav>
+  <main class="wrap" id="view"><div class="cargando">Conectando…</div></main>
+  <div id="modalRoot"></div><div id="toast" aria-live="polite"></div>`;
+}
+function renderStatus(){
+  const st = $('#status'); if(!st) return;
+  let cls = '', txt = 'Sincronizado en tiempo real';
+  if(B && B.demo){ cls = 'demo'; txt = 'Modo demostración: los datos solo se guardan en este navegador'; }
+  else if(!navigator.onLine){ cls = 'off'; txt = 'Sin conexión. No se podrá guardar hasta reconectar'; }
+  if(S.error){ cls = 'off'; txt = 'Error de conexión: ' + S.error; }
+  st.innerHTML = `<span class="dot ${cls}"></span>${esc(txt)}`;
+}
+function renderChrome(){
+  const c = C();
+  $('#hTitle').textContent = c.nombre;
+  $('#hFecha').textContent = c.fecha;
+  $('#hLugar').textContent = c.lugar;
+  document.title = c.nombre;
+  const lock = $('#lockBtn');
+  lock.innerHTML = S.edit ? IC.unlock : IC.lock;
+  lock.classList.toggle('on', S.edit);
+  lock.setAttribute('aria-label', S.edit ? 'Salir del modo edición' : 'Entrar en modo edición');
+  $('#tabs').innerHTML = TABS.map(t => `<button data-act="tab" data-id="${t.id}" ${S.tab === t.id ? 'aria-current="page"' : ''}>${t.ic}<span>${t.t}</span></button>`).join('');
+  renderStatus();
+  const ab = $('#adminbar');
+  ab.innerHTML = !S.edit ? '' : `<div class="adminbar"><div class="wrap abar"><b>Modo edición</b><div class="abtns">
+    <button class="btn sm" data-act="ajustes">Ajustes</button>
+    <button class="btn sm" data-act="historial">Historial</button>
+    <button class="btn sm" data-act="exportar">Copia</button>
+    <button class="btn sm" data-act="logoutAdmin">Cerrar sesión</button>
+    <button class="btn sm dark" data-act="salirEdicion">Salir</button></div></div></div>`;
+}
+function renderView(){
+  const v = $('#view');
+  if(!S.ready.contenido || !S.ready.partidos){ v.innerHTML = '<div class="cargando">Conectando…</div>'; return; }
+  const f = {horario: vHorario, partidos: vPartidos, menu: vMenu, stats: vStats}[S.tab];
+  v.innerHTML = f();
+}
+function render(){ renderChrome(); renderView(); }
+
+const vacio = (t, s) => `<div class="card vacio"><b>${esc(t)}</b>${s ? esc(s) : ''}</div>`;
+
+/* ---------------------------------------------------------------------
+   Vistas
+   --------------------------------------------------------------------- */
+function vHorario(){
+  const cur = D('horario');
+  let h = '<section class="sec"><h2>Horario del evento</h2>';
+  if(S.edit) return h + editorLista('horario') + '</section>';
+  if(!(cur.items || []).length) h += vacio('El horario se publicará pronto', 'Vuelve a mirar en unos días.');
+  else h += `<ol class="timeline">${cur.items.map(it => `<li><time>${esc(it.hora)}</time><div class="body"><b>${esc(it.titulo)}</b>${it.detalle ? `<p>${esc(it.detalle)}</p>` : ''}</div></li>`).join('')}</ol>`;
+  if(cur.nota) h += `<p class="note">${esc(cur.nota)}</p>`;
+  return h + '</section>';
+}
+
+function vMenu(){
+  const cur = D('menu');
+  let h = '<section class="sec"><h2>Menú de cena</h2>';
+  if(S.edit) return h + editorLista('menu') + '</section>';
+  if(!(cur.items || []).length) h += vacio('El menú se publicará pronto', 'Aquí verás los platos de la cena.');
+  else {
+    const grupos = [], idx = {};
+    for(const it of cur.items){
+      const s = (it.seccion || 'Menú').trim() || 'Menú';
+      if(!(s in idx)){ idx[s] = grupos.length; grupos.push({s, items: []}); }
+      grupos[idx[s]].items.push(it);
+    }
+    h += grupos.map(g => `<div class="menu-g"><h3>${esc(g.s)}</h3>${g.items.map(it => `<div class="dish"><b>${esc(it.nombre)}</b>${it.notas ? `<p>${esc(it.notas)}</p>` : ''}</div>`).join('')}</div>`).join('');
+  }
+  if(cur.nota) h += `<p class="note">${esc(cur.nota)}</p>`;
+  return h + '</section>';
+}
+
+function vPartidos(){
+  const ps = partidosArr(), J = jugadoresList();
+  let h = '<section class="sec"><h2>Partidos</h2>';
+  if(S.edit){
+    h += `<div class="bar"><button class="btn sm" data-act="jugadores">Jugadores (${J.length})</button>
+      <button class="btn sm" data-act="generar">Generar calendario</button>
+      <button class="btn sm" data-act="nuevoPartido" ${J.length < 4 ? 'disabled' : ''}>Añadir partido</button></div>`;
+  }
+  if(!ps.length){
+    return h + vacio('El calendario aún no está publicado', S.edit ? 'Añade los jugadores y pulsa «Generar calendario».' : 'Aquí podrás anotar tus resultados cuando empiecen los partidos.') + '</section>';
+  }
+  const jugados = ps.filter(p => p.estado === 'jugado').length;
+  h += `<div class="progress"><div class="pbar"><i style="width:${Math.round(jugados / ps.length * 100)}%"></i></div><span>${jugados} de ${ps.length} jugados</span></div>`;
+  const filtros = [['todos', 'Todos'], ['pendientes', 'Pendientes'], ['jugados', 'Jugados']];
+  if(S.yo) filtros.push(['mios', 'Los míos']);
+  h += `<div class="bar"><div class="chips">${filtros.map(([k, t]) => `<button class="chip" data-act="filtro" data-v="${k}" aria-pressed="${S.filtro === k}">${t}</button>`).join('')}</div>
+    <label class="who">Soy<select data-change="yo"><option value="">—</option>${[...J].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(j => `<option value="${esc(j.id)}" ${S.yo === j.id ? 'selected' : ''}>${esc(j.nombre)}</option>`).join('')}</select></label></div>`;
+  const ok = p => S.filtro === 'pendientes' ? p.estado !== 'jugado'
+              : S.filtro === 'jugados' ? p.estado === 'jugado'
+              : S.filtro === 'mios' ? (p.a.includes(S.yo) || p.b.includes(S.yo)) : true;
+  const rondas = [...new Set(ps.map(p => p.ronda))];
+  let alguna = false;
+  for(const r of rondas){
+    const delaRonda = ps.filter(p => p.ronda === r);
+    const visibles = delaRonda.filter(ok);
+    if(!visibles.length) continue;
+    alguna = true;
+    const juegan = new Set(delaRonda.flatMap(p => [...p.a, ...p.b]));
+    const desc = J.filter(j => !juegan.has(j.id)).map(j => j.nombre);
+    const hora = delaRonda.find(p => p.hora);
+    h += `<div class="ronda"><h3>Ronda ${r}</h3>${hora ? `<span class="rh">${esc(hora.hora)}</span>` : ''}${desc.length ? `<span class="desc">Descansan: ${esc(desc.join(', '))}</span>` : ''}</div><div class="matches">`;
+    h += visibles.map(cardPartido).join('') + '</div>';
+  }
+  if(!alguna) h += vacio('Nada que mostrar con este filtro');
+  return h + '</section>';
+}
+function cardPartido(p){
+  const jug = p.estado === 'jugado';
+  const mio = S.yo && (p.a.includes(S.yo) || p.b.includes(S.yo));
+  const lado = (ids, f, c) => `<div class="team ${jug && f > c ? 'win' : ''}"><span>${ids.map(i => esc(nom(i))).join(' y ')}</span><b class="sc">${jug ? f : '–'}</b></div>`;
+  return `<article class="card match ${jug ? 'jugado' : ''} ${mio ? 'mio' : ''}">
+    <div class="mm"><b>Pista ${p.pista}</b><span>${esc(p.hora || '')}</span></div>
+    ${lado(p.a, p.puntosA, p.puntosB)}${lado(p.b, p.puntosB, p.puntosA)}
+    <div class="mact">${jug && p.por ? `<span class="por">Anotó ${esc(p.por)}</span>` : ''}
+      ${S.edit ? `<button class="btn sm" data-act="editarPartido" data-id="${esc(p.id)}">Editar</button>` : ''}
+      <button class="btn sm ${jug ? '' : 'pri'}" data-act="resultado" data-id="${esc(p.id)}">${jug ? 'Corregir' : 'Anotar resultado'}</button></div>
+  </article>`;
+}
+
+function vStats(){
+  const J = jugadoresList(), ps = partidosArr(), jug = ps.filter(p => p.estado === 'jugado');
+  let h = '<section class="sec"><h2>Estadísticas</h2>';
+  if(!J.length) return h + vacio('Aún no hay jugadores', 'La clasificación aparecerá cuando empiece el torneo.') + '</section>';
+  const crit = C().criterio;
+  const st = calcularStats(J, ps, crit);
+  h += `<div class="progress"><div class="pbar"><i style="width:${ps.length ? Math.round(jug.length / ps.length * 100) : 0}%"></i></div><span>${jug.length} de ${ps.length} partidos jugados</span></div>`;
+  if(jug.length){
+    const top = st.filter(s => s.pj > 0).slice(0, 3);
+    const orden = [top[1], top[0], top[2]].filter(Boolean);
+    const medalla = {1: '🥇', 2: '🥈', 3: '🥉'};
+    const valor = s => crit === 'victorias' ? [s.pg, 'victorias'] : crit === 'media' ? [s.avg.toFixed(1), 'por partido'] : [s.pf, 'puntos'];
+    h += `<div class="podium">${orden.map(s => { const [v, u] = valor(s); return `<div class="card pod ${s.pos === 1 ? 'p1' : ''}"><div class="m">${medalla[s.pos] || ''}</div><b>${esc(s.nombre)}</b><div class="v">${v}</div><small>${u}</small></div>`; }).join('')}</div>`;
+  }
+  h += `<div class="card scroll"><table class="tbl"><thead><tr><th></th><th>Jugador</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>PF</th><th>Dif</th><th>Med</th></tr></thead><tbody>${
+    st.map(s => `<tr class="${s.id === S.yo ? 'yo' : ''}"><td>${s.pos}</td><td>${esc(s.nombre)}</td><td>${s.pj}</td><td>${s.pg}</td><td>${s.pe}</td><td>${s.pp}</td><td class="${crit === 'puntos' ? 'k' : ''}">${s.pf}</td><td>${s.dif > 0 ? '+' : ''}${s.dif}</td><td class="${crit === 'media' ? 'k' : ''}">${s.avg.toFixed(1)}</td></tr>`).join('')
+  }</tbody></table></div>
+  <p class="legend">PJ jugados, G ganados, E empatados, P perdidos, PF puntos a favor, Dif diferencia, Med media de puntos por partido.<br>${
+    {puntos: 'Se ordena por puntos anotados; desempata la diferencia y luego las victorias.', media: 'Se ordena por media de puntos por partido; desempata la diferencia.', victorias: 'Se ordena por victorias; desempata la diferencia y luego los puntos.'}[crit] || ''}</p>`;
+  if(jug.length){
+    const dif = p => Math.abs(p.puntosA - p.puntosB);
+    const ajustado = jug.reduce((a, b) => dif(b) < dif(a) ? b : a);
+    const paliza = jug.reduce((a, b) => dif(b) > dif(a) ? b : a);
+    const txt = p => `${equipo(p.a)} ${p.puntosA}–${p.puntosB} ${equipo(p.b)}`;
+    h += `<div class="fun">
+      <div class="card"><small>Partido más igualado</small><b>${esc(txt(ajustado))}</b></div>
+      <div class="card"><small>Mayor diferencia</small><b>${esc(txt(paliza))}</b></div>
+      <div class="card"><small>Puntos jugados en total</small><b>${jug.reduce((s, p) => s + p.puntosA + p.puntosB, 0)}</b></div></div>`;
+  }
+  return h + '</section>';
+}
+
+/* ---------------------------------------------------------------------
+   Editor de listas (horario y menú) con borrador y control de versión
+   --------------------------------------------------------------------- */
+const CAMPOS = {
+  horario: [['hora', 'Hora', ''], ['titulo', 'Título', ''], ['detalle', 'Detalle (opcional)', 'full']],
+  menu: [['seccion', 'Sección (Entrantes…)', 'full', 'secciones'], ['nombre', 'Plato', 'full'], ['notas', 'Notas, alérgenos (opcional)', 'full']]
+};
+function getDraft(id){
+  let d = S.drafts[id];
+  if(!d){
+    const cur = D(id);
+    d = S.drafts[id] = {base: cur.rev || 0, items: clone(cur.items || []), nota: cur.nota || ''};
+    d.orig = JSON.stringify({items: d.items, nota: d.nota});
+  }
+  return d;
+}
+const sucio = d => JSON.stringify({items: d.items, nota: d.nota}) !== d.orig;
+const obsoleto = id => { const d = S.drafts[id]; return !!d && (D(id).rev || 0) !== d.base; };
+
+function staleHtml(id){
+  if(!obsoleto(id)) return '';
+  return `<div class="banner warn"><b>Alguien ha guardado cambios mientras editabas.</b> Si guardas ahora, los sustituirás.
+    <div class="brow"><button class="btn sm" data-act="draftReload" data-id="${id}">Cargar lo último y descartar el mío</button>
+    <button class="btn sm" data-act="draftSave" data-id="${id}" data-force="1">Guardar el mío igualmente</button></div></div>`;
+}
+function barHtml(id){
+  const d = S.drafts[id], s = sucio(d);
+  return `<span class="${s ? 'dirty' : ''}">${s ? 'Cambios sin guardar' : 'Sin cambios'}</span>
+    <button class="btn" data-act="draftDiscard" data-id="${id}" ${s ? '' : 'disabled'}>Descartar</button>
+    <button class="btn pri" data-act="draftSave" data-id="${id}" ${s && !S.busy ? '' : 'disabled'}>Guardar</button>`;
+}
+function editorLista(id){
+  const d = getDraft(id), campos = CAMPOS[id];
+  let h = `<div id="stale-${id}">${staleHtml(id)}</div>`;
+  if(!d.items.length) h += `<div class="card vacio"><b>Todavía no hay nada</b>Añade filas o empieza con un ejemplo.<div class="brow" style="justify-content:center"><button class="btn sm" data-act="ejemplo" data-id="${id}">Cargar ejemplo</button></div></div>`;
+  h += d.items.map((it, i) => `<div class="erow ${id === 'menu' ? 'm' : ''}">${campos.map(([f, ph, cls, list]) => `<input class="${cls}" data-draft="${id}" data-i="${i}" data-f="${f}" placeholder="${ph}" value="${esc(it[f] || '')}" maxlength="140" ${list ? `list="${list}"` : ''} aria-label="${ph}">`).join('')}
+    <div class="ebtns"><button data-act="draftMove" data-id="${id}" data-i="${i}" data-dir="-1" aria-label="Subir">↑</button><button data-act="draftMove" data-id="${id}" data-i="${i}" data-dir="1" aria-label="Bajar">↓</button><button data-act="draftDel" data-id="${id}" data-i="${i}" aria-label="Quitar fila">✕</button></div></div>`).join('');
+  h += `<button class="btn" data-act="draftAdd" data-id="${id}">+ Añadir fila</button>
+    <label class="fld">Nota al final (opcional)<textarea rows="2" data-draft="${id}" data-f="nota" maxlength="600">${esc(d.nota)}</textarea></label>
+    ${id === 'menu' ? '<datalist id="secciones"><option value="Entrantes"><option value="Principal"><option value="Postre"><option value="Bebidas"></datalist>' : ''}
+    <div class="savebar" id="bar-${id}">${barHtml(id)}</div>`;
+  return h;
+}
+function paintDraft(id){
+  const b = $('#bar-' + id); if(b) b.innerHTML = barHtml(id);
+  const s = $('#stale-' + id); if(s) s.innerHTML = staleHtml(id);
+}
+
+/* ---------------------------------------------------------------------
+   Guardado central: transacción + control de conflictos
+   --------------------------------------------------------------------- */
+function aplicarLocal(ops){
+  for(const op of ops){
+    const col = op.col === 'partidos' ? S.part : S.cont;
+    if(op.type === 'delete') delete col[op.id];
+    else if(op.type === 'set') col[op.id] = {...op.data, id: op.id, rev: (op.exp || 0) + 1};
+    else if(op.type === 'update') col[op.id] = {...col[op.id], ...op.data, rev: op.exp + 1};
+  }
+}
+async function guardar(ops, log, onConflict){
+  if(S.busy) return false;
+  if(!navigator.onLine){ toast('Sin conexión. Inténtalo cuando vuelva la red.', 'err'); return false; }
+  S.busy = true; pintarBusy();
+  try {
+    await B.tx(ops, log);
+    aplicarLocal(ops);
+    return true;
+  } catch(e){
+    if(e instanceof ConflictError){
+      if(onConflict) onConflict(e.actual.data);
+      else toast('Alguien ha cambiado estos datos a la vez. Revisa lo que ves y repite.', 'err');
+    } else if(e && e.code === 'permission-denied'){
+      if(S.edit && !(await B.esAdmin())){
+        S.admin = false; S.edit = false; S.drafts = {}; cerrar(); render();
+        toast('Tu sesión de administrador ya no es válida. Vuelve a entrar con el PIN.', 'err');
+      } else toast('No tienes permiso para guardar esto.', 'err');
+    } else {
+      console.error(e);
+      toast('No se pudo guardar: ' + ((e && e.message) || 'error desconocido'), 'err');
+    }
+    return false;
+  } finally {
+    S.busy = false; pintarBusy();
+  }
+}
+function pintarBusy(){
+  document.querySelectorAll('[data-act^="draftSave"],#mSave,[data-busy]').forEach(b => { if(S.busy) b.disabled = true; });
+  if(!S.busy){
+    Object.keys(S.drafts).forEach(paintDraft);
+    if(S.modal && S.modal.type === 'resultado') validarResultado();
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Modales
+   --------------------------------------------------------------------- */
+function abrir(m){ S.modal = m; renderModal(); }
+function cerrar(){ S.modal = null; renderModal(); }
+function renderModal(){
+  const root = $('#modalRoot'), m = S.modal;
+  const prev = root.querySelector('.modal'), sc = prev ? prev.scrollTop : 0;
+  if(!m){ root.innerHTML = ''; document.body.classList.remove('noscroll'); return; }
+  root.innerHTML = `<div class="overlay"><div class="modal" role="dialog" aria-modal="true">${MODALS[m.type](m)}</div></div>`;
+  document.body.classList.add('noscroll');
+  const mod = root.querySelector('.modal');
+  if(prev && m.keepScroll !== false) mod.scrollTop = sc;
+  if(MODAL_AFTER[m.type]) MODAL_AFTER[m.type](m);
+  if(m.focus){ const f = mod.querySelector(m.focus); if(f) f.focus(); }
+}
+function confirmar(titulo, texto, ok, fn, danger){ abrir({type: 'confirm', titulo, texto, ok, fn, danger}); }
+const selJug = (val) => `<option value="">— elegir —</option>${[...jugadoresList()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(j => `<option value="${esc(j.id)}" ${val === j.id ? 'selected' : ''}>${esc(j.nombre)}</option>`).join('')}`;
+
+const MODALS = {
+  confirm: m => `<h3>${esc(m.titulo)}</h3><p>${esc(m.texto)}</p>
+    <div class="actions"><button class="btn" data-act="cerrar">Cancelar</button><button class="btn ${m.danger ? 'danger' : 'pri'}" data-act="confirmOk">${esc(m.ok)}</button></div>`,
+
+  login: m => `<h3>Modo edición</h3><p class="sub">Introduce el PIN de administrador.</p>
+    <form data-submit="login"><input type="password" data-m="pin" autocomplete="current-password" placeholder="PIN" aria-label="PIN de administrador">
+    ${m.err ? `<p class="err">${esc(m.err)}</p>` : ''}
+    <div class="actions"><button type="button" class="btn" data-act="cerrar">Cancelar</button><button class="btn pri" ${m.cargando ? 'disabled' : ''}>Entrar</button></div></form>`,
+
+  resultado: m => {
+    const p = S.part[m.id];
+    if(!p) return `<h3>Partido eliminado</h3><p>Este partido ya no existe.</p><div class="actions"><button class="btn pri" data-act="cerrar">Cerrar</button></div>`;
+    const lado = (s, ids, val) => `<div class="side"><div class="names">${ids.map(i => esc(nom(i))).join(' <i>y</i> ')}</div>
+      <div class="step"><button type="button" data-act="step" data-side="${s}" data-dl="-1" aria-label="Restar un punto">−</button>
+      <input type="number" inputmode="numeric" min="0" max="99" data-score="${s}" value="${val}" aria-label="Puntos de ${esc(equipo(ids))}">
+      <button type="button" data-act="step" data-side="${s}" data-dl="1" aria-label="Sumar un punto">+</button></div></div>`;
+    return `<h3>Resultado</h3><p class="sub">Ronda ${p.ronda}, pista ${p.pista}${p.hora ? ', ' + esc(p.hora) : ''}</p>
+      <div id="mBanner">${bannerResultado(m)}</div>
+      <div class="vs">${lado('a', p.a, m.a)}<div class="vsx">vs</div>${lado('b', p.b, m.b)}</div>
+      <p class="hint" id="mHint"></p>
+      <label class="fld">Tu nombre (opcional)<input data-m="por" maxlength="30" value="${esc(m.por)}" placeholder="Para saber quién lo anotó"></label>
+      <div class="actions"><button class="btn" data-act="cerrar">Cancelar</button><button class="btn pri" id="mSave" data-act="guardarResultado">Guardar resultado</button></div>`;
+  },
+
+  conflicto: m => {
+    const c = m.actual;
+    if(!c) return `<h3>Partido eliminado</h3><p>Mientras guardabas, el organizador eliminó este partido.</p><div class="actions"><button class="btn pri" data-act="cerrar">Cerrar</button></div>`;
+    return `<h3>Alguien se te ha adelantado</h3>
+      <p>Este partido se modificó ${esc(hace(c.ts))}${c.por ? ' (anotó ' + esc(c.por) + ')' : ''} mientras guardabas el tuyo.</p>
+      <div class="cmp"><div><small>Resultado actual</small><b>${c.estado === 'jugado' ? c.puntosA + ' – ' + c.puntosB : 'Sin resultado'}</b></div><div><small>El tuyo</small><b>${m.a} – ${m.b}</b></div></div>
+      <p>Si no estás seguro de cuál es el correcto, mantén el actual y habla con tus rivales.</p>
+      <div class="actions"><button class="btn" data-act="cerrar">Mantener el actual</button><button class="btn pri" data-act="forzarResultado">Sobrescribir con el mío</button></div>`;
+  },
+
+  partidoAdmin: m => {
+    const v = m.v;
+    const sel = (k, t) => `<label class="fld">${t}<select data-m="${k}">${selJug(v[k])}</select></label>`;
+    return `<h3>${m.id ? 'Editar partido' : 'Nuevo partido'}</h3>
+      <div class="row2"><label class="fld">Ronda<input type="number" min="1" data-m="ronda" value="${esc(v.ronda)}"></label><label class="fld">Pista<input type="number" min="1" data-m="pista" value="${esc(v.pista)}"></label></div>
+      <label class="fld">Hora<input type="time" data-m="hora" value="${esc(v.hora)}"></label>
+      <div class="row2">${sel('a1', 'Pareja A, jugador 1')}${sel('a2', 'Pareja A, jugador 2')}${sel('b1', 'Pareja B, jugador 1')}${sel('b2', 'Pareja B, jugador 2')}</div>
+      <div class="row2"><label class="fld">Puntos pareja A<input type="number" min="0" max="99" inputmode="numeric" data-m="pa" value="${esc(v.pa)}"></label><label class="fld">Puntos pareja B<input type="number" min="0" max="99" inputmode="numeric" data-m="pb" value="${esc(v.pb)}"></label></div>
+      <p class="hint">Deja los dos marcadores vacíos si el partido está pendiente.</p>
+      ${m.err ? `<p class="err">${esc(m.err)}</p>` : ''}
+      <div class="actions">${m.id ? '<button class="btn danger" data-act="borrarPartido">Eliminar</button>' : ''}<button class="btn" data-act="cerrar">Cancelar</button><button class="btn pri" data-act="guardarPartido">Guardar</button></div>`;
+  },
+
+  jugadores: m => `<h3>Jugadores</h3><p class="sub">${m.v.lista.length} en la lista</p>
+    <div>${m.v.lista.map((j, i) => `<div class="jrow"><span class="idx">${i + 1}</span><input data-m="lista" data-i="${i}" value="${esc(j.nombre)}" maxlength="40" aria-label="Jugador ${i + 1}"><button class="x" data-act="jugDel" data-i="${i}" aria-label="Quitar">✕</button></div>`).join('')}</div>
+    <button class="btn sm" data-act="jugAdd">+ Añadir uno</button>
+    <label class="fld">Añadir varios a la vez (uno por línea)<textarea rows="3" data-m="bulk" placeholder="Ana García&#10;Luis Pérez">${esc(m.v.bulk)}</textarea></label>
+    <button class="btn sm" data-act="jugBulk" style="margin-top:6px">Añadir a la lista</button>
+    ${m.err ? `<p class="err">${esc(m.err)}</p>` : ''}
+    <div class="actions"><button class="btn" data-act="cerrar">Cancelar</button><button class="btn pri" data-act="guardarJugadores">Guardar jugadores</button></div>`,
+
+  generar: m => {
+    const v = m.v, n = jugadoresList().length, ps = partidosArr(), conRes = ps.filter(p => p.estado === 'jugado').length;
+    return `<h3>Generar calendario</h3><p class="sub">Formato americano: cada ronda cambia las parejas y se reparten los descansos.</p>
+      <div class="row2"><label class="fld">Pistas disponibles<input type="number" min="1" max="20" data-m="pistas" value="${esc(v.pistas)}"></label><label class="fld">Rondas<input type="number" min="1" max="30" data-m="rondas" value="${esc(v.rondas)}"></label>
+      <label class="fld">Hora de inicio<input type="time" data-m="inicio" value="${esc(v.inicio)}"></label><label class="fld">Minutos por ronda<input type="number" min="5" max="120" data-m="minutos" value="${esc(v.minutos)}"></label></div>
+      <p class="hint" id="gInfo" style="text-align:left"></p>
+      ${ps.length ? `<div class="banner warn">Se eliminarán los ${ps.length} partidos actuales${conRes ? `, incluidos ${conRes} con resultado` : ''}.</div>` : ''}
+      ${m.err ? `<p class="err">${esc(m.err)}</p>` : ''}
+      <div class="actions"><button class="btn" data-act="cerrar">Cancelar</button><button class="btn pri" data-act="ejecutarGenerar" ${n < 4 ? 'disabled' : ''}>Generar${ps.length ? ' y reemplazar' : ''}</button></div>`;
+  },
+
+  ajustes: m => {
+    const v = m.v;
+    return `<h3>Ajustes del torneo</h3>
+      <label class="fld">Nombre<input data-m="nombre" maxlength="60" value="${esc(v.nombre)}"></label>
+      <label class="fld">Fecha<input data-m="fecha" maxlength="60" value="${esc(v.fecha)}"></label>
+      <label class="fld">Lugar (opcional)<input data-m="lugar" maxlength="80" value="${esc(v.lugar)}"></label>
+      <label class="fld">Puntos por partido (0 si no hay un total fijo)<input type="number" min="0" max="99" inputmode="numeric" data-m="puntosPartido" value="${esc(v.puntosPartido)}"></label>
+      <p class="hint" style="text-align:left">Con un total fijo, al anotar una pareja la otra se calcula sola.</p>
+      <label class="fld">Clasificación por<select data-m="criterio">
+        <option value="puntos" ${v.criterio === 'puntos' ? 'selected' : ''}>Puntos anotados</option>
+        <option value="media" ${v.criterio === 'media' ? 'selected' : ''}>Media de puntos por partido (más justo si alguien descansa más)</option>
+        <option value="victorias" ${v.criterio === 'victorias' ? 'selected' : ''}>Victorias</option></select></label>
+      ${m.err ? `<p class="err">${esc(m.err)}</p>` : ''}
+      <div class="actions"><button class="btn" data-act="cerrar">Cancelar</button><button class="btn pri" data-act="guardarAjustes">Guardar</button></div>`;
+  },
+
+  historial: m => {
+    const parse = s => { try { return JSON.parse(s); } catch(e){ return {}; } };
+    const f = o => o && o.estado === 'jugado' ? `${o.a}–${o.b}` : 'sin resultado';
+    const nombres = {horario: 'Editó el horario', menu: 'Editó el menú', jugadores: 'Editó los jugadores', config: 'Cambió los ajustes', calendario: 'Generó el calendario'};
+    const fila = h => {
+      const t = h.tipo === 'resultado' ? `${esc(h.ref)}: ${f(parse(h.antes))} → ${f(parse(h.despues))}` : h.tipo === 'partido' ? 'Editó partido ' + esc(h.ref) : esc(nombres[h.tipo] || h.tipo);
+      return `<div class="hist">${t}<small>${new Date(h.ts).toLocaleString('es-ES', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'})}, ${esc(h.por || 'anónimo')}</small></div>`;
+    };
+    return `<h3>Historial de cambios</h3>${m.items ? (m.items.length ? m.items.map(fila).join('') : '<p class="sub">Todavía no hay cambios.</p>') : '<p class="sub">Cargando…</p>'}
+      <div class="actions"><button class="btn pri" data-act="cerrar">Cerrar</button></div>`;
+  }
+};
+const MODAL_AFTER = {
+  resultado: () => validarResultado(),
+  generar: () => updateGenInfo()
+};
+
+/* ---------------------------------------------------------------------
+   Resultado: pasos, validación y aviso de conflicto
+   --------------------------------------------------------------------- */
+function bannerResultado(m){
+  const p = S.part[m.id];
+  if(!p) return '';
+  if((p.rev || 0) !== m.base){
+    const act = p.estado === 'jugado' ? `${p.puntosA} – ${p.puntosB}` : 'sin resultado';
+    return `<div class="banner warn"><b>Alguien ha modificado este partido</b> ${esc(hace(p.ts))}${p.por ? ' (' + esc(p.por) + ')' : ''}. Ahora figura: <b>${act}</b>. Si guardas, lo sustituirás.</div>`;
+  }
+  if(p.estado === 'jugado') return `<div class="banner info">Ya hay un resultado: <b>${p.puntosA} – ${p.puntosB}</b>${p.por ? ' (anotó ' + esc(p.por) + ')' : ''}. Si guardas, lo sustituirás.</div>`;
+  return '';
+}
+function syncInputs(){
+  const m = S.modal;
+  for(const s of ['a', 'b']){
+    const el = document.querySelector(`[data-score="${s}"]`);
+    if(el && el.value !== String(m[s])) el.value = m[s];
+  }
+}
+function setScore(side, raw){
+  const m = S.modal, t = C().puntosPartido, otro = side === 'a' ? 'b' : 'a';
+  let v = raw === '' ? '' : parseInt(raw, 10);
+  if(v !== '' && Number.isNaN(v)) v = '';
+  if(v !== '') v = Math.max(0, Math.min(99, v));
+  m[side] = v;
+  if(t > 0 && v !== '' && v <= t) m[otro] = t - v;
+  syncInputs(); validarResultado();
+}
+function validarResultado(){
+  const m = S.modal; if(!m || m.type !== 'resultado') return;
+  const t = C().puntosPartido, a = m.a === '' ? NaN : +m.a, b = m.b === '' ? NaN : +m.b;
+  const ok = marcadorValido(a, b, t) && !!S.part[m.id] && !S.busy;
+  const hint = $('#mHint'), btn = $('#mSave');
+  let txt = '', bad = false;
+  if(!S.part[m.id]){ txt = 'Este partido ya no existe.'; bad = true; }
+  else if(m.a === '' || m.b === '') txt = t > 0 ? `Cada partido suma ${t} puntos.` : 'Introduce los puntos de las dos parejas.';
+  else if(t > 0 && a + b !== t){ txt = `Los puntos deben sumar ${t} (ahora suman ${a + b}).`; bad = true; }
+  if(hint){ hint.textContent = txt; hint.classList.toggle('bad', bad); }
+  if(btn) btn.disabled = !ok;
+}
+function refrescarBanner(){
+  const m = S.modal;
+  if(!m || m.type !== 'resultado') return;
+  const b = $('#mBanner');
+  if(b) b.innerHTML = bannerResultado(m);
+  validarResultado();
+}
+
+async function guardarResultado(force){
+  const m = S.modal, p = S.part[m.id];
+  if(!p){ toast('Este partido ya no existe', 'err'); cerrar(); return; }
+  const a = +m.a, b = +m.b;
+  if(!marcadorValido(a, b, C().puntosPartido)) return;
+  S.por = (m.por || '').trim(); ls.set('padel-por', S.por);
+  const exp = force ? force.rev : m.base;
+  const previo = force ? force.data : p;
+  const ok = await guardar(
+    [{type: 'update', col: 'partidos', id: m.id, exp, data: {puntosA: a, puntosB: b, estado: 'jugado', por: S.por, ts: Date.now()}}],
+    {tipo: 'resultado', ref: etiquetaPartido(p), antes: JSON.stringify({a: previo.puntosA, b: previo.puntosB, estado: previo.estado}), despues: JSON.stringify({a, b, estado: 'jugado'}), por: S.por || 'anónimo'},
+    actual => abrir({type: 'conflicto', id: m.id, actual, a, b, por: S.por})
+  );
+  if(ok){ toast('Resultado guardado', 'ok'); cerrar(); }
+}
+
+/* ---------------------------------------------------------------------
+   Acciones (clic)
+   --------------------------------------------------------------------- */
+const ACT = {
+  cerrar: () => cerrar(),
+  confirmOk: () => { const f = S.modal.fn; cerrar(); if(f) f(); },
+  tab: el => { S.tab = el.dataset.id; history.replaceState(null, '', '#' + S.tab); render(); window.scrollTo(0, 0); },
+  filtro: el => { S.filtro = el.dataset.v; renderView(); },
+
+  /* --- acceso de administrador --- */
+  lock: () => {
+    if(S.edit) return ACT.salirEdicion();
+    if(S.admin){ S.edit = true; render(); return; }
+    abrir({type: 'login', v: {pin: ''}, focus: '[data-m=pin]'});
+  },
+  login: async () => {
+    const m = S.modal, pin = (m.v.pin || '').trim();
+    if(!pin) return;
+    m.cargando = true; m.err = ''; renderModal();
+    const ok = await B.loginAdmin(pin);
+    if(ok){ S.admin = true; S.edit = true; cerrar(); render(); toast('Modo edición activado', 'ok'); }
+    else { abrir({type: 'login', v: {pin: ''}, err: 'PIN incorrecto o sin conexión.', focus: '[data-m=pin]'}); }
+  },
+  logoutAdmin: () => confirmar('Cerrar sesión de administrador', 'Tendrás que volver a introducir el PIN para editar.', 'Cerrar sesión', async () => {
+    await B.logoutAdmin(); S.admin = false; S.edit = false; S.drafts = {}; render();
+  }),
+  salirEdicion: () => {
+    const fin = () => { S.edit = false; S.drafts = {}; render(); };
+    if(Object.values(S.drafts).some(sucio)) confirmar('Hay cambios sin guardar', 'Si sales ahora se perderán.', 'Salir y descartar', fin, true);
+    else fin();
+  },
+
+  /* --- borradores de horario / menú --- */
+  draftAdd: el => { const d = getDraft(el.dataset.id); d.items.push(el.dataset.id === 'menu' ? {seccion: '', nombre: '', notas: ''} : {hora: '', titulo: '', detalle: ''}); renderView(); const ins = document.querySelectorAll('.erow'); const last = ins[ins.length - 1]; if(last){ last.scrollIntoView({block: 'center'}); last.querySelector('input').focus(); } },
+  draftDel: el => { getDraft(el.dataset.id).items.splice(+el.dataset.i, 1); renderView(); },
+  draftMove: el => {
+    const d = getDraft(el.dataset.id), i = +el.dataset.i, j = i + +el.dataset.dir;
+    if(j < 0 || j >= d.items.length) return;
+    [d.items[i], d.items[j]] = [d.items[j], d.items[i]]; renderView();
+  },
+  ejemplo: el => { const d = getDraft(el.dataset.id); d.items = clone(EJEMPLO[el.dataset.id]); renderView(); },
+  draftDiscard: el => confirmar('Descartar cambios', 'Se perderá lo que has editado en esta pestaña.', 'Descartar', () => { delete S.drafts[el.dataset.id]; renderView(); }, true),
+  draftReload: el => { delete S.drafts[el.dataset.id]; renderView(); },
+  draftSave: async el => {
+    const id = el.dataset.id, d = S.drafts[id], cur = D(id);
+    if(!d) return;
+    const exp = el.dataset.force ? (cur.rev || 0) : d.base;
+    const vacia = it => Object.values(it).every(x => !String(x || '').trim());
+    const items = d.items.filter(it => !vacia(it)).map(it => Object.fromEntries(Object.entries(it).map(([k, v]) => [k, String(v || '').trim()])));
+    const data = {items, nota: d.nota.trim()};
+    const ok = await guardar(
+      [{type: 'set', col: 'contenido', id, exp, data}],
+      {tipo: id, ref: id, antes: JSON.stringify({items: cur.items || [], nota: cur.nota || ''}), despues: JSON.stringify(data), por: 'Admin'},
+      () => { renderView(); toast('Otro dispositivo guardó antes que tú. Elige qué conservar.', 'err'); }
+    );
+    if(ok){ delete S.drafts[id]; renderView(); toast('Guardado', 'ok'); }
+  },
+
+  /* --- resultados --- */
+  resultado: el => {
+    const p = S.part[el.dataset.id]; if(!p) return;
+    abrir({type: 'resultado', id: p.id, base: p.rev || 0, a: p.estado === 'jugado' ? p.puntosA : '', b: p.estado === 'jugado' ? p.puntosB : '', por: S.por});
+  },
+  step: el => { const m = S.modal, s = el.dataset.side; setScore(s, String((m[s] === '' ? 0 : +m[s]) + +el.dataset.dl)); },
+  guardarResultado: () => guardarResultado(),
+  forzarResultado: () => {
+    const c = S.modal;
+    if(!c.actual) return cerrar();
+    abrir({type: 'resultado', id: c.id, base: c.actual.rev || 0, a: c.a, b: c.b, por: c.por});
+    guardarResultado({rev: c.actual.rev || 0, data: c.actual});
+  },
+
+  /* --- partidos (admin) --- */
+  nuevoPartido: () => {
+    const ps = partidosArr(), ult = ps[ps.length - 1];
+    abrir({type: 'partidoAdmin', id: null, base: 0, v: {ronda: ult ? ult.ronda : 1, pista: 1, hora: ult ? ult.hora : '', a1: '', a2: '', b1: '', b2: '', pa: '', pb: ''}});
+  },
+  editarPartido: el => {
+    const p = S.part[el.dataset.id]; if(!p) return;
+    abrir({type: 'partidoAdmin', id: p.id, base: p.rev || 0, v: {ronda: p.ronda, pista: p.pista, hora: p.hora || '', a1: p.a[0], a2: p.a[1], b1: p.b[0], b2: p.b[1], pa: p.estado === 'jugado' ? p.puntosA : '', pb: p.estado === 'jugado' ? p.puntosB : ''}});
+  },
+  guardarPartido: async () => {
+    const m = S.modal, v = m.v, fail = t => { m.err = t; renderModal(); };
+    const ids = [v.a1, v.a2, v.b1, v.b2];
+    if(ids.some(x => !x)) return fail('Elige los cuatro jugadores.');
+    if(new Set(ids).size < 4) return fail('Un jugador no puede aparecer dos veces.');
+    const ronda = parseInt(v.ronda, 10), pista = parseInt(v.pista, 10);
+    if(!(ronda >= 1) || !(pista >= 1)) return fail('Indica ronda y pista.');
+    const hora = (v.hora || '').trim();
+    const vacioN = x => x === '' || x === null || x === undefined;
+    const pa = vacioN(v.pa) ? null : parseInt(v.pa, 10), pb = vacioN(v.pb) ? null : parseInt(v.pb, 10);
+    if((pa === null) !== (pb === null)) return fail('Rellena los dos marcadores o ninguno.');
+    if(pa !== null && !(pa >= 0 && pa <= 99 && pb >= 0 && pb <= 99)) return fail('Los puntos deben estar entre 0 y 99.');
+    const data = {ronda, pista, hora, a: [v.a1, v.a2], b: [v.b1, v.b2], puntosA: pa, puntosB: pb, estado: pa === null ? 'pendiente' : 'jugado', por: 'Admin', ts: Date.now()};
+    const op = m.id ? {type: 'update', col: 'partidos', id: m.id, exp: m.base, data} : {type: 'set', col: 'partidos', id: 'x' + Date.now().toString(36), exp: 0, data};
+    const ok = await guardar([op], {tipo: 'partido', ref: etiquetaPartido(data), antes: '{}', despues: JSON.stringify({a: pa, b: pb, estado: data.estado}), por: 'Admin'},
+      () => { cerrar(); toast('Alguien modificó este partido mientras lo editabas. Ábrelo de nuevo para ver los cambios.', 'err'); });
+    if(ok){ cerrar(); toast('Partido guardado', 'ok'); }
+  },
+  borrarPartido: () => {
+    const m = S.modal, p = S.part[m.id];
+    confirmar('Eliminar partido', p ? etiquetaPartido(p) : '', 'Eliminar', async () => {
+      const ok = await guardar([{type: 'delete', col: 'partidos', id: m.id, exp: m.base}], {tipo: 'partido', ref: p ? etiquetaPartido(p) : m.id, antes: '{}', despues: '{"eliminado":true}', por: 'Admin'},
+        () => toast('Alguien modificó este partido a la vez. Revisa y repite.', 'err'));
+      if(ok) toast('Partido eliminado', 'ok');
+    }, true);
+  },
+
+  /* --- jugadores --- */
+  jugadores: () => abrir({type: 'jugadores', base: D('jugadores').rev || 0, v: {lista: clone(jugadoresList()), bulk: ''}}),
+  jugAdd: () => { const l = S.modal.v.lista; l.push({id: nuevoIdJugador(l), nombre: ''}); renderModal(); const i = document.querySelectorAll('[data-m=lista]'); if(i.length) i[i.length - 1].focus(); },
+  jugBulk: () => {
+    const l = S.modal.v.lista;
+    S.modal.v.bulk.split('\n').map(x => x.trim()).filter(Boolean).forEach(n => l.push({id: nuevoIdJugador(l), nombre: n}));
+    S.modal.v.bulk = ''; renderModal();
+  },
+  jugDel: el => {
+    const l = S.modal.v.lista, j = l[+el.dataset.i];
+    if(partidosArr().some(p => p.a.includes(j.id) || p.b.includes(j.id))){ S.modal.err = `${j.nombre || 'Este jugador'} tiene partidos asignados. Elimina o edita esos partidos primero.`; return renderModal(); }
+    l.splice(+el.dataset.i, 1); S.modal.err = ''; renderModal();
+  },
+  guardarJugadores: async () => {
+    const m = S.modal, fail = t => { m.err = t; renderModal(); };
+    const lista = m.v.lista.map(j => ({id: j.id, nombre: j.nombre.trim()})).filter(j => j.nombre);
+    if(lista.length > 40) return fail('El máximo es 40 jugadores.');
+    const vistos = new Set();
+    for(const j of lista){ const k = j.nombre.toLowerCase(); if(vistos.has(k)) return fail(`«${j.nombre}» está repetido. Añade el apellido para distinguirlos.`); vistos.add(k); }
+    const antes = jugadoresList();
+    const ok = await guardar([{type: 'set', col: 'contenido', id: 'jugadores', exp: m.base, data: {lista}}], {tipo: 'jugadores', ref: 'jugadores', antes: JSON.stringify(antes), despues: JSON.stringify(lista), por: 'Admin'},
+      () => { cerrar(); toast('La lista cambió en otro dispositivo. Ábrela de nuevo.', 'err'); });
+    if(ok){ cerrar(); toast('Jugadores guardados', 'ok'); }
+  },
+
+  /* --- calendario --- */
+  generar: () => {
+    const n = jugadoresList().length;
+    abrir({type: 'generar', v: {pistas: Math.max(1, Math.min(Math.floor(n / 4), 3)), rondas: Math.min(Math.max(n - 1, 1), 8), inicio: '17:30', minutos: 25}});
+  },
+  ejecutarGenerar: async () => {
+    const m = S.modal, v = m.v, fail = t => { m.err = t; renderModal(); };
+    const J = jugadoresList(), pistas = parseInt(v.pistas, 10), rondas = parseInt(v.rondas, 10), minutos = parseInt(v.minutos, 10);
+    if(J.length < 4) return fail('Hacen falta al menos 4 jugadores.');
+    if(!(pistas >= 1) || !(rondas >= 1 && rondas <= 30) || !(minutos >= 5 && minutos <= 120)) return fail('Revisa pistas, rondas y duración.');
+    if(!/^\d{1,2}:\d{2}$/.test(v.inicio || '')) return fail('Indica la hora de inicio.');
+    const cal = generarCalendario(J.map(j => j.id), pistas, rondas);
+    const tag = Date.now().toString(36).slice(-4);
+    const ops = partidosArr().map(p => ({type: 'delete', col: 'partidos', id: p.id, exp: p.rev || 0}));
+    for(const r of cal) r.matches.forEach((mt, i) => ops.push({type: 'set', col: 'partidos', id: `${tag}-r${String(r.ronda).padStart(2, '0')}p${i + 1}`,
+      data: {ronda: r.ronda, pista: i + 1, hora: sumaMin(v.inicio, (r.ronda - 1) * minutos), a: mt.a, b: mt.b, puntosA: null, puntosB: null, estado: 'pendiente', por: '', ts: Date.now()}}));
+    const ok = await guardar(ops, {tipo: 'calendario', ref: 'calendario', antes: '{}', despues: JSON.stringify({pistas, rondas, partidos: ops.filter(o => o.type === 'set').length}), por: 'Admin'},
+      () => fail('Alguien guardó un resultado justo ahora. Revisa los partidos y vuelve a generar.'));
+    if(ok){ cerrar(); toast('Calendario generado', 'ok'); }
+  },
+
+  /* --- ajustes, historial, copia --- */
+  ajustes: () => abrir({type: 'ajustes', base: (S.cont.config || {}).rev || 0, v: {...C()}}),
+  guardarAjustes: async () => {
+    const m = S.modal, v = m.v;
+    const pp = parseInt(v.puntosPartido, 10);
+    if(!(pp >= 0 && pp <= 99)){ m.err = 'Los puntos por partido deben estar entre 0 y 99.'; return renderModal(); }
+    if(!(v.nombre || '').trim()){ m.err = 'Escribe un nombre.'; return renderModal(); }
+    const data = {nombre: v.nombre.trim(), fecha: (v.fecha || '').trim(), lugar: (v.lugar || '').trim(), puntosPartido: pp, criterio: v.criterio};
+    const ok = await guardar([{type: 'set', col: 'contenido', id: 'config', exp: m.base, data}], {tipo: 'config', ref: 'config', antes: JSON.stringify(C()), despues: JSON.stringify(data), por: 'Admin'},
+      () => { cerrar(); toast('Los ajustes cambiaron en otro dispositivo. Ábrelos de nuevo.', 'err'); });
+    if(ok){ cerrar(); renderChrome(); renderView(); toast('Ajustes guardados', 'ok'); }
+  },
+  historial: async () => {
+    abrir({type: 'historial', items: null});
+    try { const items = await B.historial(); if(S.modal && S.modal.type === 'historial'){ S.modal.items = items; renderModal(); } }
+    catch(e){ cerrar(); toast('No se pudo cargar el historial.', 'err'); }
+  },
+  exportar: () => {
+    const blob = new Blob([JSON.stringify({exportado: new Date().toISOString(), contenido: S.cont, partidos: S.part}, null, 2)], {type: 'application/json'});
+    const a = document.createElement('a'), d = new Date(), z = n => String(n).padStart(2, '0');
+    a.href = URL.createObjectURL(blob);
+    a.download = `torneo-padel-${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+};
+const nuevoIdJugador = l => 'p' + (Math.max(0, ...l.map(j => parseInt(String(j.id).slice(1), 10) || 0)) + 1);
+
+function updateGenInfo(){
+  const m = S.modal; if(!m || m.type !== 'generar') return;
+  const n = jugadoresList().length, pistas = parseInt(m.v.pistas, 10) || 0, rondas = parseInt(m.v.rondas, 10) || 0;
+  const el = $('#gInfo'); if(!el) return;
+  if(n < 4){ el.textContent = 'Añade al menos 4 jugadores antes de generar el calendario.'; return; }
+  const pr = Math.min(Math.floor(n / 4), pistas), juegan = pr * 4;
+  el.textContent = `${n} jugadores: en cada ronda juegan ${juegan}${n - juegan ? ` y descansan ${n - juegan}` : ''}. Total: ${pr * rondas} partidos.`;
+}
+
+/* ---------------------------------------------------------------------
+   Eventos
+   --------------------------------------------------------------------- */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if(!el || el.disabled) return;
+  const f = ACT[el.dataset.act];
+  if(f){ e.preventDefault(); f(el); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.dataset && e.target.dataset.submit;
+  if(f && ACT[f]){ e.preventDefault(); ACT[f](e.target); }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if(t.dataset.draft !== undefined){
+    const d = S.drafts[t.dataset.draft]; if(!d) return;
+    if(t.dataset.f === 'nota') d.nota = t.value; else d.items[+t.dataset.i][t.dataset.f] = t.value;
+    paintDraft(t.dataset.draft);
+  } else if(t.dataset.score){
+    setScore(t.dataset.score, t.value);
+  } else if(t.dataset.m !== undefined && S.modal){
+    onModalInput(t);
+  }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if(t.dataset.change === 'yo'){ S.yo = t.value; ls.set('padel-yo', S.yo); if(!S.yo && S.filtro === 'mios') S.filtro = 'todos'; renderView(); }
+  else if(t.dataset.m !== undefined && S.modal) onModalInput(t);
+});
+function onModalInput(t){
+  const m = S.modal, k = t.dataset.m;
+  if(k === 'lista') m.v.lista[+t.dataset.i].nombre = t.value;
+  else if(m.v) m.v[k] = t.value;
+  else m[k] = t.value;
+  if(m.type === 'generar') updateGenInfo();
+}
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && S.modal) cerrar();
+});
+window.addEventListener('online', renderStatus);
+window.addEventListener('offline', renderStatus);
+window.addEventListener('hashchange', () => {
+  const id = location.hash.slice(1);
+  if(TABS.some(t => t.id === id) && id !== S.tab){ S.tab = id; render(); }
+});
+
+/* ---------------------------------------------------------------------
+   Datos entrantes
+   --------------------------------------------------------------------- */
+function alLlegarDatos(){
+  renderChrome();
+  const a = document.activeElement;
+  const escribiendo = S.edit && a && $('#view').contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+  if(escribiendo) Object.keys(S.drafts).forEach(paintDraft); else renderView();
+  refrescarBanner();
+  if(S.modal && S.modal.type === 'resultado' && !S.part[S.modal.id]) renderModal();
+}
+
+async function start(){
+  renderShell();
+  const h = location.hash.slice(1);
+  if(TABS.some(t => t.id === h)) S.tab = h;
+  renderChrome();
+  try {
+    B = FIREBASE_CONFIG.apiKey ? await crearBackendFirebase(FIREBASE_CONFIG) : crearBackendDemo();
+  } catch(e){
+    console.error(e);
+    $('#view').innerHTML = `<div class="card vacio"><b>No se pudo conectar</b>${esc(e.message || e)}<br>Revisa la configuración de Firebase en index.html.</div>`;
+    return;
+  }
+  S.admin = await B.esAdmin();
+  renderStatus();
+  B.listen('contenido', docs => { S.cont = Object.fromEntries(docs.map(d => [d.id, d])); S.ready.contenido = true; alLlegarDatos(); });
+  B.listen('partidos', docs => { S.part = Object.fromEntries(docs.map(d => [d.id, d])); S.ready.partidos = true; alLlegarDatos(); });
+}
+start();
+</script>
+</body>
+</html>
