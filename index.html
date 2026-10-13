@@ -474,10 +474,30 @@ const S = {
   ready: {contenido: false, partidos: false},
   error: ''
 };
+/* Datos iniciales: se muestran mientras no exista el dato en la base de datos.
+   Con el botón «Publicar datos iniciales» (modo edición) se guardan en Firebase. */
 const DEF = {
-  config: {nombre: 'Torneo de Pádel', fecha: 'Viernes 23 de octubre', lugar: '', puntosPartido: 24, criterio: 'puntos'},
-  horario: {items: [], nota: ''},
-  menu: {items: [], nota: ''},
+  config: {nombre: 'Torneo de Pádel', fecha: 'Viernes 23 de octubre', lugar: 'Soccerworld Sports Zaragoza · Paseo La Noria, 8', puntosPartido: 24, criterio: 'puntos'},
+  horario: {
+    items: [
+      {hora: '17:30', titulo: 'Torneo de pádel', detalle: 'Hasta las 19:30. Formato americano, con parejas rotativas. Anota tu resultado en la pestaña Partidos al terminar cada partido.'},
+      {hora: '20:30', titulo: 'Barbacoa', detalle: 'Cena en el local.'}
+    ],
+    nota: 'Precios por persona (orientativos):\nSolo pádel (2 horas): 9 €\nSolo BBQ: 23 €\nPádel + BBQ: 32 €'
+  },
+  menu: {
+    items: [
+      {seccion: 'Barbacoa', nombre: 'Chorizo', notas: ''},
+      {seccion: 'Barbacoa', nombre: 'Morcilla', notas: ''},
+      {seccion: 'Barbacoa', nombre: 'Longaniza', notas: ''},
+      {seccion: 'Barbacoa', nombre: 'Papada', notas: ''},
+      {seccion: 'Barbacoa', nombre: 'Secreto', notas: ''},
+      {seccion: 'Para acompañar', nombre: 'Ensalada ilustrada', notas: ''},
+      {seccion: 'Para acompañar', nombre: 'Patatas fritas', notas: 'A compartir'},
+      {seccion: 'Bebida', nombre: 'Agua, vino y gaseosa', notas: ''}
+    ],
+    nota: 'Precio de la cena (orientativo): 23 € por persona.'
+  },
   jugadores: {lista: []}
 };
 const EJEMPLO = {
@@ -562,6 +582,7 @@ function renderChrome(){
   renderStatus();
   const ab = $('#adminbar');
   ab.innerHTML = !S.edit ? '' : `<div class="adminbar"><div class="wrap abar"><b>Modo edición</b><div class="abtns">
+    ${['config', 'horario', 'menu'].some(id => !S.cont[id]) ? '<button class="btn sm dark" data-act="publicarIniciales">Publicar datos iniciales</button>' : ''}
     <button class="btn sm" data-act="ajustes">Ajustes</button>
     <button class="btn sm" data-act="historial">Historial</button>
     <button class="btn sm" data-act="exportar">Copia</button>
@@ -887,7 +908,7 @@ const MODALS = {
   historial: m => {
     const parse = s => { try { return JSON.parse(s); } catch(e){ return {}; } };
     const f = o => o && o.estado === 'jugado' ? `${o.a}–${o.b}` : 'sin resultado';
-    const nombres = {horario: 'Editó el horario', menu: 'Editó el menú', jugadores: 'Editó los jugadores', config: 'Cambió los ajustes', calendario: 'Generó el calendario'};
+    const nombres = {horario: 'Editó el horario', menu: 'Editó el menú', jugadores: 'Editó los jugadores', config: 'Cambió los ajustes', calendario: 'Generó el calendario', iniciales: 'Publicó los datos iniciales'};
     const fila = h => {
       const t = h.tipo === 'resultado' ? `${esc(h.ref)}: ${f(parse(h.antes))} → ${f(parse(h.despues))}` : h.tipo === 'partido' ? 'Editó partido ' + esc(h.ref) : esc(nombres[h.tipo] || h.tipo);
       return `<div class="hist">${t}<small>${new Date(h.ts).toLocaleString('es-ES', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'})}, ${esc(h.por || 'anónimo')}</small></div>`;
@@ -1102,7 +1123,7 @@ const ACT = {
   /* --- calendario --- */
   generar: () => {
     const n = jugadoresList().length;
-    abrir({type: 'generar', v: {pistas: Math.max(1, Math.min(Math.floor(n / 4), 3)), rondas: Math.min(Math.max(n - 1, 1), 8), inicio: '17:30', minutos: 25}});
+    abrir({type: 'generar', v: {pistas: Math.max(1, Math.min(Math.floor(n / 4), 3)), rondas: Math.min(Math.max(n - 1, 1), 5), inicio: '17:30', minutos: 24}});
   },
   ejecutarGenerar: async () => {
     const m = S.modal, v = m.v, fail = t => { m.err = t; renderModal(); };
@@ -1118,6 +1139,17 @@ const ACT = {
     const ok = await guardar(ops, {tipo: 'calendario', ref: 'calendario', antes: '{}', despues: JSON.stringify({pistas, rondas, partidos: ops.filter(o => o.type === 'set').length}), por: 'Admin'},
       () => fail('Alguien guardó un resultado justo ahora. Revisa los partidos y vuelve a generar.'));
     if(ok){ cerrar(); toast('Calendario generado', 'ok'); }
+  },
+
+  publicarIniciales: () => {
+    const ids = ['config', 'horario', 'menu'].filter(id => !S.cont[id]);
+    if(!ids.length) return;
+    confirmar('Publicar datos iniciales', 'Se guardarán en la base de datos el nombre del torneo, el horario y el menú que vienen cargados en la página. Después los editas con el candado.', 'Publicar', async () => {
+      const ops = ids.map(id => ({type: 'set', col: 'contenido', id, exp: 0, data: id === 'config' ? C() : {items: clone(DEF[id].items), nota: DEF[id].nota}}));
+      const ok = await guardar(ops, {tipo: 'iniciales', ref: ids.join(','), antes: '{}', despues: JSON.stringify(ids), por: 'Admin'},
+        () => toast('Alguien guardó antes que tú. Revisa los datos y vuelve a intentarlo.', 'err'));
+      if(ok){ render(); toast('Datos iniciales publicados', 'ok'); }
+    });
   },
 
   /* --- ajustes, historial, copia --- */
