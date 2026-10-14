@@ -474,10 +474,30 @@ const S = {
   ready: {contenido: false, partidos: false},
   error: ''
 };
+/* Datos iniciales: se muestran mientras no exista el dato en la base de datos.
+   Con el botón «Publicar datos iniciales» (modo edición) se guardan en Firebase. */
 const DEF = {
-  config: {nombre: 'Torneo de Pádel', fecha: 'Viernes 23 de octubre', lugar: '', puntosPartido: 24, criterio: 'puntos'},
-  horario: {items: [], nota: ''},
-  menu: {items: [], nota: ''},
+  config: {nombre: 'Torneo de Pádel', fecha: 'Viernes 23 de octubre', lugar: 'Soccerworld Sports Zaragoza · Paseo La Noria, 8', puntosPartido: 24, criterio: 'puntos'},
+  horario: {
+    items: [
+      {hora: '17:30', titulo: 'Torneo de pádel', detalle: 'Hasta las 19:30. Formato americano, con parejas rotativas. Anota tu resultado en la pestaña Partidos al terminar cada partido.'},
+      {hora: '20:30', titulo: 'Barbacoa', detalle: 'Cena en el local.'}
+    ],
+    nota: 'Precios por persona (orientativos):\nSolo pádel (2 horas): 9 €\nSolo BBQ: 23 €\nPádel + BBQ: 32 €'
+  },
+  menu: {
+    items: [
+      {seccion: 'Barbacoa', nombre: 'Chorizo', notas: ''},
+      {seccion: 'Barbacoa', nombre: 'Morcilla', notas: ''},
+      {seccion: 'Barbacoa', nombre: 'Longaniza', notas: ''},
+      {seccion: 'Barbacoa', nombre: 'Papada', notas: ''},
+      {seccion: 'Barbacoa', nombre: 'Secreto', notas: ''},
+      {seccion: 'Para acompañar', nombre: 'Ensalada ilustrada', notas: ''},
+      {seccion: 'Para acompañar', nombre: 'Patatas fritas', notas: 'A compartir'},
+      {seccion: 'Bebida', nombre: 'Agua, vino y gaseosa', notas: ''}
+    ],
+    nota: 'Precio de la cena (orientativo): 23 € por persona.'
+  },
   jugadores: {lista: []}
 };
 const EJEMPLO = {
@@ -562,6 +582,7 @@ function renderChrome(){
   renderStatus();
   const ab = $('#adminbar');
   ab.innerHTML = !S.edit ? '' : `<div class="adminbar"><div class="wrap abar"><b>Modo edición</b><div class="abtns">
+    ${['config', 'horario', 'menu'].some(id => !S.cont[id]) ? '<button class="btn sm dark" data-act="publicarIniciales">Publicar datos iniciales</button>' : ''}
     <button class="btn sm" data-act="ajustes">Ajustes</button>
     <button class="btn sm" data-act="historial">Historial</button>
     <button class="btn sm" data-act="exportar">Copia</button>
@@ -615,6 +636,7 @@ function vPartidos(){
   if(S.edit){
     h += `<div class="bar"><button class="btn sm" data-act="jugadores">Jugadores (${J.length})</button>
       <button class="btn sm" data-act="generar">Generar calendario</button>
+      <button class="btn sm" data-act="importar" ${J.length < 4 ? 'disabled' : ''}>Importar cuadro</button>
       <button class="btn sm" data-act="nuevoPartido" ${J.length < 4 ? 'disabled' : ''}>Añadir partido</button></div>`;
   }
   if(!ps.length){
@@ -849,6 +871,13 @@ const MODALS = {
       <div class="actions">${m.id ? '<button class="btn danger" data-act="borrarPartido">Eliminar</button>' : ''}<button class="btn" data-act="cerrar">Cancelar</button><button class="btn pri" data-act="guardarPartido">Guardar</button></div>`;
   },
 
+  importar: m => `<h3>Importar cuadro</h3><p class="sub">Un partido por línea. Los nombres deben coincidir con la lista de jugadores.</p>
+    <label class="fld">Cuadro<textarea rows="10" data-m="texto" placeholder="R1 | 17:30 | P1 | Ana + Luis vs Marta + Pol" spellcheck="false">${esc(m.v.texto)}</textarea></label>
+    <p class="hint" style="text-align:left">Formato: <b>R1 | 17:30 | P1 | Jugador + Jugador vs Jugador + Jugador</b></p>
+    ${partidosArr().length ? `<div class="banner warn">Se eliminarán los ${partidosArr().length} partidos actuales.</div>` : ''}
+    ${m.err ? `<p class="err" style="white-space:pre-line">${esc(m.err)}</p>` : ''}
+    <div class="actions"><button class="btn" data-act="cerrar">Cancelar</button><button class="btn pri" data-act="ejecutarImportar">Importar</button></div>`,
+
   jugadores: m => `<h3>Jugadores</h3><p class="sub">${m.v.lista.length} en la lista</p>
     <div>${m.v.lista.map((j, i) => `<div class="jrow"><span class="idx">${i + 1}</span><input data-m="lista" data-i="${i}" value="${esc(j.nombre)}" maxlength="40" aria-label="Jugador ${i + 1}"><button class="x" data-act="jugDel" data-i="${i}" aria-label="Quitar">✕</button></div>`).join('')}</div>
     <button class="btn sm" data-act="jugAdd">+ Añadir uno</button>
@@ -887,7 +916,7 @@ const MODALS = {
   historial: m => {
     const parse = s => { try { return JSON.parse(s); } catch(e){ return {}; } };
     const f = o => o && o.estado === 'jugado' ? `${o.a}–${o.b}` : 'sin resultado';
-    const nombres = {horario: 'Editó el horario', menu: 'Editó el menú', jugadores: 'Editó los jugadores', config: 'Cambió los ajustes', calendario: 'Generó el calendario'};
+    const nombres = {horario: 'Editó el horario', menu: 'Editó el menú', jugadores: 'Editó los jugadores', config: 'Cambió los ajustes', calendario: 'Generó el calendario', iniciales: 'Publicó los datos iniciales'};
     const fila = h => {
       const t = h.tipo === 'resultado' ? `${esc(h.ref)}: ${f(parse(h.antes))} → ${f(parse(h.despues))}` : h.tipo === 'partido' ? 'Editó partido ' + esc(h.ref) : esc(nombres[h.tipo] || h.tipo);
       return `<div class="hist">${t}<small>${new Date(h.ts).toLocaleString('es-ES', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'})}, ${esc(h.por || 'anónimo')}</small></div>`;
@@ -1099,10 +1128,43 @@ const ACT = {
     if(ok){ cerrar(); toast('Jugadores guardados', 'ok'); }
   },
 
+  /* --- importar cuadro --- */
+  importar: () => abrir({type: 'importar', v: {texto: ''}}),
+  ejecutarImportar: async () => {
+    const m = S.modal, fail = t => { m.err = t; renderModal(); };
+    const byName = new Map(jugadoresList().map(j => [j.nombre.trim().toLowerCase(), j.id]));
+    const re = /^R(\d+)\s*\|\s*(\d{1,2}:\d{2})?\s*\|\s*P(\d+)\s*\|\s*(.+?)\s*\+\s*(.+?)\s+vs\s+(.+?)\s*\+\s*(.+)$/i;
+    const errs = [], rows = [], enRonda = new Map(), usados = new Set();
+    m.v.texto.split('\n').map(x => x.trim()).filter(Boolean).forEach((line, i) => {
+      const r = re.exec(line);
+      if(!r){ errs.push(`Línea ${i + 1}: formato no válido.`); return; }
+      const ronda = +r[1], pista = +r[3], hora = r[2] ? r[2].padStart(5, '0') : '';
+      const ids = [r[4], r[5], r[6], r[7]].map(n => byName.get(n.trim().toLowerCase()));
+      ids.forEach((id, k) => { if(!id) errs.push(`Línea ${i + 1}: «${[r[4], r[5], r[6], r[7]][k]}» no está en la lista de jugadores.`); });
+      if(ids.some(x => !x)) return;
+      if(new Set(ids).size < 4) errs.push(`Línea ${i + 1}: hay un jugador repetido en el partido.`);
+      const set = enRonda.get(ronda) || new Set(); enRonda.set(ronda, set);
+      ids.forEach(id => { if(set.has(id)) errs.push(`Línea ${i + 1}: ${nom(id)} ya juega en la ronda ${ronda}.`); set.add(id); });
+      const key = ronda + '-' + pista;
+      if(usados.has(key)) errs.push(`Línea ${i + 1}: la ronda ${ronda} pista ${pista} está repetida.`);
+      usados.add(key);
+      rows.push({ronda, pista, hora, a: ids.slice(0, 2), b: ids.slice(2)});
+    });
+    if(!rows.length && !errs.length) return fail('Pega el cuadro primero.');
+    if(errs.length) return fail(errs.slice(0, 8).join('\n') + (errs.length > 8 ? `\n… y ${errs.length - 8} más.` : ''));
+    const tag = Date.now().toString(36).slice(-4);
+    const ops = partidosArr().map(p => ({type: 'delete', col: 'partidos', id: p.id, exp: p.rev || 0}));
+    rows.forEach(r => ops.push({type: 'set', col: 'partidos', id: `${tag}-r${String(r.ronda).padStart(2, '0')}p${r.pista}`,
+      data: {ronda: r.ronda, pista: r.pista, hora: r.hora, a: r.a, b: r.b, puntosA: null, puntosB: null, estado: 'pendiente', por: '', ts: Date.now()}}));
+    const ok = await guardar(ops, {tipo: 'calendario', ref: 'importado', antes: '{}', despues: JSON.stringify({partidos: rows.length}), por: 'Admin'},
+      () => fail('Alguien guardó un resultado justo ahora. Revisa los partidos y vuelve a importar.'));
+    if(ok){ cerrar(); toast(`${rows.length} partidos importados`, 'ok'); }
+  },
+
   /* --- calendario --- */
   generar: () => {
     const n = jugadoresList().length;
-    abrir({type: 'generar', v: {pistas: Math.max(1, Math.min(Math.floor(n / 4), 3)), rondas: Math.min(Math.max(n - 1, 1), 8), inicio: '17:30', minutos: 25}});
+    abrir({type: 'generar', v: {pistas: Math.max(1, Math.min(Math.floor(n / 4), 3)), rondas: Math.min(Math.max(n - 1, 1), 5), inicio: '17:30', minutos: 24}});
   },
   ejecutarGenerar: async () => {
     const m = S.modal, v = m.v, fail = t => { m.err = t; renderModal(); };
@@ -1118,6 +1180,17 @@ const ACT = {
     const ok = await guardar(ops, {tipo: 'calendario', ref: 'calendario', antes: '{}', despues: JSON.stringify({pistas, rondas, partidos: ops.filter(o => o.type === 'set').length}), por: 'Admin'},
       () => fail('Alguien guardó un resultado justo ahora. Revisa los partidos y vuelve a generar.'));
     if(ok){ cerrar(); toast('Calendario generado', 'ok'); }
+  },
+
+  publicarIniciales: () => {
+    const ids = ['config', 'horario', 'menu'].filter(id => !S.cont[id]);
+    if(!ids.length) return;
+    confirmar('Publicar datos iniciales', 'Se guardarán en la base de datos el nombre del torneo, el horario y el menú que vienen cargados en la página. Después los editas con el candado.', 'Publicar', async () => {
+      const ops = ids.map(id => ({type: 'set', col: 'contenido', id, exp: 0, data: id === 'config' ? C() : {items: clone(DEF[id].items), nota: DEF[id].nota}}));
+      const ok = await guardar(ops, {tipo: 'iniciales', ref: ids.join(','), antes: '{}', despues: JSON.stringify(ids), por: 'Admin'},
+        () => toast('Alguien guardó antes que tú. Revisa los datos y vuelve a intentarlo.', 'err'));
+      if(ok){ render(); toast('Datos iniciales publicados', 'ok'); }
+    });
   },
 
   /* --- ajustes, historial, copia --- */
