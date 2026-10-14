@@ -526,6 +526,10 @@ const D = id => S.cont[id] || {...clone(DEF[id]), rev: 0};
 const C = () => ({...DEF.config, ...(S.cont.config || {})});
 const jugadoresList = () => D('jugadores').lista || [];
 const nom = id => (jugadoresList().find(j => j.id === id) || {nombre: '¿?'}).nombre;
+/* Nombre con nivel entre paréntesis: solo se usa en modo edición */
+const nomN = id => { const j = jugadoresList().find(x => x.id === id); return j ? j.nombre + (j.nivel ? ` (${j.nivel})` : '') : '¿?'; };
+const parseJug = t => { const m = /^(.*?)\s*\(\s*([1-9])\s*\)\s*$/.exec((t || '').trim()); return m && m[1].trim() ? {nombre: m[1].trim(), nivel: +m[2]} : {nombre: (t || '').trim(), nivel: 0}; };
+const txtJug = j => j.nombre + (j.nivel ? ` (${j.nivel})` : '');
 const partidosArr = () => Object.values(S.part).sort((x, y) => x.ronda - y.ronda || x.pista - y.pista);
 const equipo = ids => ids.map(nom).join(' y ');
 const nomPista = n => { const x = (C().pistas || [])[n - 1]; return (x && String(x).trim()) || 'Pista ' + n; };
@@ -671,7 +675,7 @@ function vPartidos(){
     const juegan = new Set(delaRonda.flatMap(p => [...p.a, ...p.b]));
     const descJ = J.filter(j => !juegan.has(j.id)), desc = descJ.map(j => j.nombre);
     const hora = delaRonda.find(p => p.hora);
-    h += `<div class="ronda"><h3>Ronda ${r}</h3>${hora ? `<span class="rh">${esc(hora.hora)}</span>` : ''}${desc.length ? `<span class="desc">Descansan: ${S.edit ? descJ.map(j => `<span class="pl rest ${S.sel && S.sel.pid === j.id && !S.sel.mid ? 'sel' : ''}" data-pid="${esc(j.id)}" data-mid="" data-ronda="${r}">${esc(j.nombre)}</span>`).join('') : esc(desc.join(', '))}</span>` : ''}</div><div class="matches">`;
+    h += `<div class="ronda"><h3>Ronda ${r}</h3>${hora ? `<span class="rh">${esc(hora.hora)}</span>` : ''}${desc.length ? `<span class="desc">Descansan: ${S.edit ? descJ.map(j => `<span class="pl rest ${S.sel && S.sel.pid === j.id && !S.sel.mid ? 'sel' : ''}" data-pid="${esc(j.id)}" data-mid="" data-ronda="${r}">${esc(nomN(j.id))}</span>`).join('') : esc(desc.join(', '))}</span>` : ''}</div><div class="matches">`;
     h += visibles.map(cardPartido).join('') + '</div>';
   }
   if(!alguna) h += vacio('Nada que mostrar con este filtro');
@@ -681,14 +685,14 @@ function cardPartido(p){
   const jug = p.estado === 'jugado';
   const mio = S.yo && (p.a.includes(S.yo) || p.b.includes(S.yo));
   const nm = i => S.edit && !jug
-    ? `<span class="pl ${S.sel && S.sel.pid === i && S.sel.mid === p.id ? 'sel' : ''}" data-pid="${esc(i)}" data-mid="${esc(p.id)}" data-ronda="${p.ronda}">${esc(nom(i))}</span>`
+    ? `<span class="pl ${S.sel && S.sel.pid === i && S.sel.mid === p.id ? 'sel' : ''}" data-pid="${esc(i)}" data-mid="${esc(p.id)}" data-ronda="${p.ronda}">${esc(nomN(i))}</span>`
     : esc(nom(i));
   const lado = (ids, f, c) => `<div class="team ${jug && f > c ? 'win' : ''}"><span>${ids.map(nm).join(' y ')}</span><b class="sc">${jug ? f : '–'}</b></div>`;
   return `<article class="card match ${jug ? 'jugado' : ''} ${mio ? 'mio' : ''}">
     <div class="mm"><b>${esc(nomPista(p.pista))}</b><span>${esc(p.hora || '')}</span></div>
     ${lado(p.a, p.puntosA, p.puntosB)}${lado(p.b, p.puntosB, p.puntosA)}
     <div class="mact">${jug && p.por ? `<span class="por">Anotó ${esc(p.por)}</span>` : ''}
-      ${S.edit ? `<button class="btn sm" data-act="editarPartido" data-id="${esc(p.id)}">Editar</button>` : ''}
+      ${S.edit ? `<button class="btn sm danger" data-act="eliminarTarjeta" data-id="${esc(p.id)}">Eliminar</button><button class="btn sm" data-act="editarPartido" data-id="${esc(p.id)}">Editar</button>` : ''}
       <button class="btn sm ${jug ? '' : 'pri'}" data-act="resultado" data-id="${esc(p.id)}">${jug ? 'Corregir' : 'Anotar resultado'}</button></div>
   </article>`;
 }
@@ -835,7 +839,7 @@ function renderModal(){
   if(m.focus){ const f = mod.querySelector(m.focus); if(f) f.focus(); }
 }
 function confirmar(titulo, texto, ok, fn, danger){ abrir({type: 'confirm', titulo, texto, ok, fn, danger}); }
-const selJug = (val) => `<option value="">— elegir —</option>${[...jugadoresList()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(j => `<option value="${esc(j.id)}" ${val === j.id ? 'selected' : ''}>${esc(j.nombre)}</option>`).join('')}`;
+const selJug = (val) => `<option value="">— elegir —</option>${[...jugadoresList()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(j => `<option value="${esc(j.id)}" ${val === j.id ? 'selected' : ''}>${esc(nomN(j.id))}</option>`).join('')}`;
 
 const MODALS = {
   confirm: m => `<h3>${esc(m.titulo)}</h3><p>${esc(m.texto)}</p>
@@ -892,9 +896,9 @@ const MODALS = {
     <div class="actions"><button class="btn" data-act="cerrar">Cancelar</button><button class="btn pri" data-act="ejecutarImportar">Importar</button></div>`,
 
   jugadores: m => `<h3>Jugadores</h3><p class="sub">${m.v.lista.length} en la lista</p>
-    <div>${m.v.lista.map((j, i) => `<div class="jrow"><span class="idx">${i + 1}</span><input data-m="lista" data-i="${i}" value="${esc(j.nombre)}" maxlength="40" aria-label="Jugador ${i + 1}"><button class="x" data-act="jugDel" data-i="${i}" aria-label="Quitar">✕</button></div>`).join('')}</div>
+    <div>${m.v.lista.map((j, i) => `<div class="jrow"><span class="idx">${i + 1}</span><input data-m="lista" data-i="${i}" value="${esc(j.txt)}" maxlength="44" aria-label="Jugador ${i + 1}"><button class="x" data-act="jugDel" data-i="${i}" aria-label="Quitar">✕</button></div>`).join('')}</div>
     <button class="btn sm" data-act="jugAdd">+ Añadir uno</button>
-    <label class="fld">Añadir varios a la vez (uno por línea)<textarea rows="3" data-m="bulk" placeholder="Ana García&#10;Luis Pérez">${esc(m.v.bulk)}</textarea></label>
+    <label class="fld">Añadir varios a la vez (uno por línea, con el nivel entre paréntesis)<textarea rows="3" data-m="bulk" placeholder="Ana García (2)&#10;Luis Pérez (3)">${esc(m.v.bulk)}</textarea></label>
     <button class="btn sm" data-act="jugBulk" style="margin-top:6px">Añadir a la lista</button>
     ${m.err ? `<p class="err">${esc(m.err)}</p>` : ''}
     <div class="actions"><button class="btn" data-act="cerrar">Cancelar</button><button class="btn pri" data-act="guardarJugadores">Guardar jugadores</button></div>`,
@@ -1109,6 +1113,16 @@ const ACT = {
       () => { cerrar(); toast('Alguien modificó este partido mientras lo editabas. Ábrelo de nuevo para ver los cambios.', 'err'); });
     if(ok){ cerrar(); toast('Partido guardado', 'ok'); }
   },
+  eliminarTarjeta: el => {
+    const p = S.part[el.dataset.id]; if(!p) return;
+    const exp = p.rev || 0, ref = etiquetaPartido(p);
+    const res = p.estado === 'jugado' ? ` ATENCIÓN: ya tiene resultado (${p.puntosA}–${p.puntosB}) y se perderá.` : '';
+    confirmar('¿Eliminar este partido?', `${ref}\n${res} No se puede deshacer.`, 'Sí, eliminar', async () => {
+      const ok = await guardar([{type: 'delete', col: 'partidos', id: p.id, exp}], {tipo: 'partido', ref: ref + ' (eliminado)', antes: JSON.stringify({a: p.a, b: p.b, estado: p.estado, puntosA: p.puntosA, puntosB: p.puntosB}), despues: '{"eliminado":true}', por: 'Admin'},
+        () => toast('Alguien modificó este partido a la vez. Revisa y repite.', 'err'));
+      if(ok) toast('Partido eliminado', 'ok');
+    }, true);
+  },
   borrarPartido: () => {
     const m = S.modal, p = S.part[m.id];
     confirmar('Eliminar partido', p ? etiquetaPartido(p) : '', 'Eliminar', async () => {
@@ -1119,23 +1133,27 @@ const ACT = {
   },
 
   /* --- jugadores --- */
-  jugadores: () => abrir({type: 'jugadores', base: D('jugadores').rev || 0, v: {lista: clone(jugadoresList()), bulk: ''}}),
-  jugAdd: () => { const l = S.modal.v.lista; l.push({id: nuevoIdJugador(l), nombre: ''}); renderModal(); const i = document.querySelectorAll('[data-m=lista]'); if(i.length) i[i.length - 1].focus(); },
+  jugadores: () => abrir({type: 'jugadores', base: D('jugadores').rev || 0, v: {lista: clone(jugadoresList()).map(j => ({id: j.id, txt: txtJug(j)})), bulk: ''}}),
+  jugAdd: () => { const l = S.modal.v.lista; l.push({id: nuevoIdJugador(l), txt: ''}); renderModal(); const i = document.querySelectorAll('[data-m=lista]'); if(i.length) i[i.length - 1].focus(); },
   jugBulk: () => {
     const l = S.modal.v.lista;
-    S.modal.v.bulk.split('\n').map(x => x.trim()).filter(Boolean).forEach(n => l.push({id: nuevoIdJugador(l), nombre: n}));
+    /* Si el nombre ya existe, se actualiza su nivel en lugar de duplicarlo */
+    S.modal.v.bulk.split('\n').map(x => x.trim()).filter(Boolean).forEach(t => {
+      const n = parseJug(t).nombre.toLowerCase(), ya = l.find(j => parseJug(j.txt).nombre.toLowerCase() === n);
+      if(ya) ya.txt = t; else l.push({id: nuevoIdJugador(l), txt: t});
+    });
     S.modal.v.bulk = ''; renderModal();
   },
   jugDel: el => {
     const l = S.modal.v.lista, j = l[+el.dataset.i];
-    if(partidosArr().some(p => p.a.includes(j.id) || p.b.includes(j.id))){ S.modal.err = `${j.nombre || 'Este jugador'} tiene partidos asignados. Elimina o edita esos partidos primero.`; return renderModal(); }
+    if(partidosArr().some(p => p.a.includes(j.id) || p.b.includes(j.id))){ S.modal.err = `${parseJug(j.txt).nombre || 'Este jugador'} tiene partidos asignados. Elimina o edita esos partidos primero.`; return renderModal(); }
     l.splice(+el.dataset.i, 1); S.modal.err = ''; renderModal();
   },
   guardarJugadores: async () => {
     const m = S.modal, fail = t => { m.err = t; renderModal(); };
     /* Si hay nombres pegados sin pulsar «Añadir a la lista», se incluyen igualmente */
     if((m.v.bulk || '').trim()) ACT.jugBulk();
-    const lista = m.v.lista.map(j => ({id: j.id, nombre: j.nombre.trim()})).filter(j => j.nombre);
+    const lista = m.v.lista.map(j => { const q = parseJug(j.txt); return q.nivel ? {id: j.id, nombre: q.nombre, nivel: q.nivel} : {id: j.id, nombre: q.nombre}; }).filter(j => j.nombre);
     if(!lista.length) return fail('La lista está vacía. Añade al menos un jugador.');
     if(lista.length > 40) return fail('El máximo es 40 jugadores.');
     const vistos = new Set();
@@ -1282,7 +1300,7 @@ document.addEventListener('change', e => {
 });
 function onModalInput(t){
   const m = S.modal, k = t.dataset.m;
-  if(k === 'lista') m.v.lista[+t.dataset.i].nombre = t.value;
+  if(k === 'lista') m.v.lista[+t.dataset.i].txt = t.value;
   else if(m.v) m.v[k] = t.value;
   else m[k] = t.value;
   if(m.type === 'generar') updateGenInfo();
