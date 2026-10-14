@@ -1118,7 +1118,10 @@ const ACT = {
   },
   guardarJugadores: async () => {
     const m = S.modal, fail = t => { m.err = t; renderModal(); };
+    /* Si hay nombres pegados sin pulsar «Añadir a la lista», se incluyen igualmente */
+    if((m.v.bulk || '').trim()) ACT.jugBulk();
     const lista = m.v.lista.map(j => ({id: j.id, nombre: j.nombre.trim()})).filter(j => j.nombre);
+    if(!lista.length) return fail('La lista está vacía. Añade al menos un jugador.');
     if(lista.length > 40) return fail('El máximo es 40 jugadores.');
     const vistos = new Set();
     for(const j of lista){ const k = j.nombre.toLowerCase(); if(vistos.has(k)) return fail(`«${j.nombre}» está repetido. Añade el apellido para distinguirlos.`); vistos.add(k); }
