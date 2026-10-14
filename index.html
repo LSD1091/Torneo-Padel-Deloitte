@@ -120,6 +120,13 @@ h1,h2,h3{font-family:var(--head);margin:0;letter-spacing:.005em;line-height:1.05
 .team.win span{font-weight:600}
 .team.win .sc{color:var(--ink);text-shadow:0 3px 0 var(--ball)}
 .team + .team{border-top:1px dashed var(--line)}
+.pl{display:inline-block;padding:2px 8px;margin:1px 0;border:1px dashed var(--line);border-radius:8px;cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.pl.rest{background:var(--card);margin:2px 3px 2px 0}
+.pl.sel{outline:2px solid var(--ball);outline-offset:1px}
+.pl.over{outline:2px solid var(--pri);outline-offset:1px;background:color-mix(in srgb,var(--pri) 15%,transparent)}
+.pl.drag{opacity:.35}
+.ghost{position:fixed;z-index:9999;pointer-events:none;padding:4px 12px;border-radius:10px;background:var(--pri);color:var(--pri-ink,#fff);box-shadow:0 6px 18px rgba(0,0,0,.3);font-size:17px;transform:translate(-50%,-130%)}
+.dnd-hint{font-size:14px;color:var(--mut);margin:6px 0 0}
 .mact{display:flex;gap:8px;justify-content:flex-end;align-items:center}
 .por{font-size:13px;color:var(--mut);margin-right:auto}
 
@@ -494,9 +501,10 @@ const DEF = {
       {seccion: 'Barbacoa', nombre: 'Secreto', notas: ''},
       {seccion: 'Para acompañar', nombre: 'Ensalada ilustrada', notas: ''},
       {seccion: 'Para acompañar', nombre: 'Patatas fritas', notas: 'A compartir'},
-      {seccion: 'Bebida', nombre: 'Agua, vino y gaseosa', notas: ''}
+      {seccion: 'Bebida', nombre: 'Agua, vino y gaseosa', notas: ''},
+      {seccion: 'Opción vegana', nombre: 'Menú vegano', notas: 'Avisa al organizador si lo necesitas'}
     ],
-    nota: 'Precio de la cena (orientativo): 23 € por persona.'
+    nota: 'Cena BBQ Soccer (orientativo): 23 € por persona. Disponible también opción vegana.'
   },
   jugadores: {lista: []}
 };
@@ -520,7 +528,8 @@ const jugadoresList = () => D('jugadores').lista || [];
 const nom = id => (jugadoresList().find(j => j.id === id) || {nombre: '¿?'}).nombre;
 const partidosArr = () => Object.values(S.part).sort((x, y) => x.ronda - y.ronda || x.pista - y.pista);
 const equipo = ids => ids.map(nom).join(' y ');
-const etiquetaPartido = p => `R${p.ronda} P${p.pista}: ${equipo(p.a)} vs ${equipo(p.b)}`;
+const nomPista = n => { const x = (C().pistas || [])[n - 1]; return (x && String(x).trim()) || 'Pista ' + n; };
+const etiquetaPartido = p => `R${p.ronda} ${nomPista(p.pista)}: ${equipo(p.a)} vs ${equipo(p.b)}`;
 
 /* ---------------------------------------------------------------------
    Iconos
@@ -643,6 +652,7 @@ function vPartidos(){
     return h + vacio('El calendario aún no está publicado', S.edit ? 'Añade los jugadores y pulsa «Generar calendario».' : 'Aquí podrás anotar tus resultados cuando empiecen los partidos.') + '</section>';
   }
   const jugados = ps.filter(p => p.estado === 'jugado').length;
+  if(S.edit) h += '<p class="dnd-hint">Para cambiar jugadores: toca un nombre y luego otro, o mantén pulsado y arrástralo sobre otro de la misma ronda (también sobre los que descansan).</p>';
   h += `<div class="progress"><div class="pbar"><i style="width:${Math.round(jugados / ps.length * 100)}%"></i></div><span>${jugados} de ${ps.length} jugados</span></div>`;
   const filtros = [['todos', 'Todos'], ['pendientes', 'Pendientes'], ['jugados', 'Jugados']];
   if(S.yo) filtros.push(['mios', 'Los míos']);
@@ -659,9 +669,9 @@ function vPartidos(){
     if(!visibles.length) continue;
     alguna = true;
     const juegan = new Set(delaRonda.flatMap(p => [...p.a, ...p.b]));
-    const desc = J.filter(j => !juegan.has(j.id)).map(j => j.nombre);
+    const descJ = J.filter(j => !juegan.has(j.id)), desc = descJ.map(j => j.nombre);
     const hora = delaRonda.find(p => p.hora);
-    h += `<div class="ronda"><h3>Ronda ${r}</h3>${hora ? `<span class="rh">${esc(hora.hora)}</span>` : ''}${desc.length ? `<span class="desc">Descansan: ${esc(desc.join(', '))}</span>` : ''}</div><div class="matches">`;
+    h += `<div class="ronda"><h3>Ronda ${r}</h3>${hora ? `<span class="rh">${esc(hora.hora)}</span>` : ''}${desc.length ? `<span class="desc">Descansan: ${S.edit ? descJ.map(j => `<span class="pl rest ${S.sel && S.sel.pid === j.id && !S.sel.mid ? 'sel' : ''}" data-pid="${esc(j.id)}" data-mid="" data-ronda="${r}">${esc(j.nombre)}</span>`).join('') : esc(desc.join(', '))}</span>` : ''}</div><div class="matches">`;
     h += visibles.map(cardPartido).join('') + '</div>';
   }
   if(!alguna) h += vacio('Nada que mostrar con este filtro');
@@ -670,9 +680,12 @@ function vPartidos(){
 function cardPartido(p){
   const jug = p.estado === 'jugado';
   const mio = S.yo && (p.a.includes(S.yo) || p.b.includes(S.yo));
-  const lado = (ids, f, c) => `<div class="team ${jug && f > c ? 'win' : ''}"><span>${ids.map(i => esc(nom(i))).join(' y ')}</span><b class="sc">${jug ? f : '–'}</b></div>`;
+  const nm = i => S.edit && !jug
+    ? `<span class="pl ${S.sel && S.sel.pid === i && S.sel.mid === p.id ? 'sel' : ''}" data-pid="${esc(i)}" data-mid="${esc(p.id)}" data-ronda="${p.ronda}">${esc(nom(i))}</span>`
+    : esc(nom(i));
+  const lado = (ids, f, c) => `<div class="team ${jug && f > c ? 'win' : ''}"><span>${ids.map(nm).join(' y ')}</span><b class="sc">${jug ? f : '–'}</b></div>`;
   return `<article class="card match ${jug ? 'jugado' : ''} ${mio ? 'mio' : ''}">
-    <div class="mm"><b>Pista ${p.pista}</b><span>${esc(p.hora || '')}</span></div>
+    <div class="mm"><b>${esc(nomPista(p.pista))}</b><span>${esc(p.hora || '')}</span></div>
     ${lado(p.a, p.puntosA, p.puntosB)}${lado(p.b, p.puntosB, p.puntosA)}
     <div class="mact">${jug && p.por ? `<span class="por">Anotó ${esc(p.por)}</span>` : ''}
       ${S.edit ? `<button class="btn sm" data-act="editarPartido" data-id="${esc(p.id)}">Editar</button>` : ''}
@@ -840,7 +853,7 @@ const MODALS = {
       <div class="step"><button type="button" data-act="step" data-side="${s}" data-dl="-1" aria-label="Restar un punto">−</button>
       <input type="number" inputmode="numeric" min="0" max="99" data-score="${s}" value="${val}" aria-label="Puntos de ${esc(equipo(ids))}">
       <button type="button" data-act="step" data-side="${s}" data-dl="1" aria-label="Sumar un punto">+</button></div></div>`;
-    return `<h3>Resultado</h3><p class="sub">Ronda ${p.ronda}, pista ${p.pista}${p.hora ? ', ' + esc(p.hora) : ''}</p>
+    return `<h3>Resultado</h3><p class="sub">Ronda ${p.ronda}, ${esc(nomPista(p.pista))}${p.hora ? ', ' + esc(p.hora) : ''}</p>
       <div id="mBanner">${bannerResultado(m)}</div>
       <div class="vs">${lado('a', p.a, m.a)}<div class="vsx">vs</div>${lado('b', p.b, m.b)}</div>
       <p class="hint" id="mHint"></p>
@@ -862,7 +875,7 @@ const MODALS = {
     const v = m.v;
     const sel = (k, t) => `<label class="fld">${t}<select data-m="${k}">${selJug(v[k])}</select></label>`;
     return `<h3>${m.id ? 'Editar partido' : 'Nuevo partido'}</h3>
-      <div class="row2"><label class="fld">Ronda<input type="number" min="1" data-m="ronda" value="${esc(v.ronda)}"></label><label class="fld">Pista<input type="number" min="1" data-m="pista" value="${esc(v.pista)}"></label></div>
+      <div class="row2"><label class="fld">Ronda<input type="number" min="1" data-m="ronda" value="${esc(v.ronda)}"></label><label class="fld">Nº de pista<input type="number" min="1" data-m="pista" value="${esc(v.pista)}"></label></div>
       <label class="fld">Hora<input type="time" data-m="hora" value="${esc(v.hora)}"></label>
       <div class="row2">${sel('a1', 'Pareja A, jugador 1')}${sel('a2', 'Pareja A, jugador 2')}${sel('b1', 'Pareja B, jugador 1')}${sel('b2', 'Pareja B, jugador 2')}</div>
       <div class="row2"><label class="fld">Puntos pareja A<input type="number" min="0" max="99" inputmode="numeric" data-m="pa" value="${esc(v.pa)}"></label><label class="fld">Puntos pareja B<input type="number" min="0" max="99" inputmode="numeric" data-m="pb" value="${esc(v.pb)}"></label></div>
@@ -903,6 +916,8 @@ const MODALS = {
       <label class="fld">Nombre<input data-m="nombre" maxlength="60" value="${esc(v.nombre)}"></label>
       <label class="fld">Fecha<input data-m="fecha" maxlength="60" value="${esc(v.fecha)}"></label>
       <label class="fld">Lugar (opcional)<input data-m="lugar" maxlength="80" value="${esc(v.lugar)}"></label>
+      <label class="fld">Nombres de las pistas (uno por línea, en orden)<textarea rows="4" data-m="pistasTxt" maxlength="600" spellcheck="false" placeholder="Pista 1&#10;Pista 2&#10;Pista 3">${esc(v.pistasTxt)}</textarea></label>
+      <p class="hint" style="text-align:left">La primera línea es la pista 1, la segunda la pista 2… Si dejas una línea vacía, esa pista se llama «Pista N».</p>
       <label class="fld">Puntos por partido (0 si no hay un total fijo)<input type="number" min="0" max="99" inputmode="numeric" data-m="puntosPartido" value="${esc(v.puntosPartido)}"></label>
       <p class="hint" style="text-align:left">Con un total fijo, al anotar una pareja la otra se calcula sola.</p>
       <label class="fld">Clasificación por<select data-m="criterio">
@@ -1022,7 +1037,7 @@ const ACT = {
     await B.logoutAdmin(); S.admin = false; S.edit = false; S.drafts = {}; render();
   }),
   salirEdicion: () => {
-    const fin = () => { S.edit = false; S.drafts = {}; render(); };
+    const fin = () => { S.edit = false; S.sel = null; S.drafts = {}; render(); };
     if(Object.values(S.drafts).some(sucio)) confirmar('Hay cambios sin guardar', 'Si sales ahora se perderán.', 'Salir y descartar', fin, true);
     else fin();
   },
@@ -1197,13 +1212,16 @@ const ACT = {
   },
 
   /* --- ajustes, historial, copia --- */
-  ajustes: () => abrir({type: 'ajustes', base: (S.cont.config || {}).rev || 0, v: {...C()}}),
+  ajustes: () => abrir({type: 'ajustes', base: (S.cont.config || {}).rev || 0, v: {...C(), pistasTxt: (C().pistas || []).join('\n')}}),
   guardarAjustes: async () => {
     const m = S.modal, v = m.v;
     const pp = parseInt(v.puntosPartido, 10);
     if(!(pp >= 0 && pp <= 99)){ m.err = 'Los puntos por partido deben estar entre 0 y 99.'; return renderModal(); }
     if(!(v.nombre || '').trim()){ m.err = 'Escribe un nombre.'; return renderModal(); }
-    const data = {nombre: v.nombre.trim(), fecha: (v.fecha || '').trim(), lugar: (v.lugar || '').trim(), puntosPartido: pp, criterio: v.criterio};
+    const pistas = (v.pistasTxt || '').split('\n').map(x => x.trim().slice(0, 30));
+    while(pistas.length && !pistas[pistas.length - 1]) pistas.pop();
+    if(pistas.length > 20){ m.err = 'El máximo es 20 pistas.'; return renderModal(); }
+    const data = {nombre: v.nombre.trim(), fecha: (v.fecha || '').trim(), lugar: (v.lugar || '').trim(), pistas, puntosPartido: pp, criterio: v.criterio};
     const ok = await guardar([{type: 'set', col: 'contenido', id: 'config', exp: m.base, data}], {tipo: 'config', ref: 'config', antes: JSON.stringify(C()), despues: JSON.stringify(data), por: 'Admin'},
       () => { cerrar(); toast('Los ajustes cambiaron en otro dispositivo. Ábrelos de nuevo.', 'err'); });
     if(ok){ cerrar(); renderChrome(); renderView(); toast('Ajustes guardados', 'ok'); }
@@ -1278,6 +1296,91 @@ window.addEventListener('hashchange', () => {
   const id = location.hash.slice(1);
   if(TABS.some(t => t.id === id) && id !== S.tab){ S.tab = id; render(); }
 });
+
+/* ---------------------------------------------------------------------
+   Intercambiar jugadores (tocar dos nombres o arrastrar)
+   --------------------------------------------------------------------- */
+async function intercambiar(x, y){
+  if(!x || !y || x.ronda !== y.ronda) { if(x && y) toast('Solo se pueden intercambiar jugadores de la misma ronda.', 'err'); return; }
+  if(x.pid === y.pid && x.mid === y.mid) return;
+  if(!x.mid && !y.mid) return;
+  const px = x.mid ? S.part[x.mid] : null, py = y.mid ? S.part[y.mid] : null;
+  if((x.mid && !px) || (y.mid && !py)){ toast('Ese partido ya no existe.', 'err'); return; }
+  if((px && px.estado === 'jugado') || (py && py.estado === 'jugado')){ toast('Ese partido ya tiene resultado. Cámbialo con «Editar».', 'err'); return; }
+  const swap = (p, de, a) => ({a: p.a.map(i => i === de ? a : i), b: p.b.map(i => i === de ? a : i)});
+  const upd = {};
+  if(px && py && px.id === py.id){
+    const f = i => i === x.pid ? y.pid : i === y.pid ? x.pid : i;
+    upd[px.id] = {a: px.a.map(f), b: px.b.map(f)};
+  } else {
+    if(px) upd[px.id] = swap(px, x.pid, y.pid);
+    if(py) upd[py.id] = swap(py, y.pid, x.pid);
+  }
+  const ops = Object.keys(upd).map(id => ({type: 'update', col: 'partidos', id, exp: S.part[id].rev || 0, data: {...upd[id], ts: Date.now()}}));
+  S.sel = null;
+  const ok = await guardar(ops, {tipo: 'partido', ref: `R${x.ronda}: ${nom(x.pid)} ⇄ ${nom(y.pid)}`, antes: JSON.stringify(Object.keys(upd).map(id => ({id, a: S.part[id].a, b: S.part[id].b}))), despues: JSON.stringify(upd), por: 'Admin'},
+    () => toast('Alguien cambió ese partido a la vez. Revisa y repite.', 'err'));
+  if(ok) toast(`${nom(x.pid)} ⇄ ${nom(y.pid)}`, 'ok'); else renderView();
+}
+const infoPl = el => ({pid: el.dataset.pid, mid: el.dataset.mid || '', ronda: +el.dataset.ronda});
+function tocarNombre(el){
+  const t = infoPl(el);
+  if(!S.sel){ S.sel = t; renderView(); return; }
+  if(S.sel.pid === t.pid && S.sel.mid === t.mid){ S.sel = null; renderView(); return; }
+  if(S.sel.ronda !== t.ronda){ S.sel = t; renderView(); return; }
+  intercambiar(S.sel, t);
+}
+let DR = null;
+function limpiarDrag(){
+  if(!DR) return;
+  clearTimeout(DR.timer);
+  if(DR.ghost) DR.ghost.remove();
+  document.querySelectorAll('.pl.over,.pl.drag').forEach(e => e.classList.remove('over', 'drag'));
+  DR = null;
+}
+function iniciarDrag(){
+  if(!DR) return;
+  DR.drag = true; S.sel = null;
+  DR.el.classList.add('drag');
+  const g = document.createElement('div'); g.className = 'ghost'; g.textContent = DR.el.textContent;
+  document.body.appendChild(g); DR.ghost = g; moverGhost(DR.x, DR.y);
+  if(navigator.vibrate) try { navigator.vibrate(15); } catch(e){}
+}
+function moverGhost(x, y){
+  DR.x = x; DR.y = y;
+  if(DR.ghost){ DR.ghost.style.left = x + 'px'; DR.ghost.style.top = y + 'px'; }
+  document.querySelectorAll('.pl.over').forEach(e => e.classList.remove('over'));
+  const t = bajoPuntero(x, y);
+  if(t && t !== DR.el && +t.dataset.ronda === DR.ronda) t.classList.add('over');
+}
+const bajoPuntero = (x, y) => { const e = document.elementFromPoint(x, y); return e && e.closest ? e.closest('.pl') : null; };
+document.addEventListener('pointerdown', e => {
+  if(!S.edit || S.modal || e.button) return;
+  const el = e.target.closest && e.target.closest('.pl'); if(!el) return;
+  limpiarDrag();
+  DR = {el, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, ronda: +el.dataset.ronda, drag: false, touch: e.pointerType !== 'mouse'};
+  if(DR.touch) DR.timer = setTimeout(iniciarDrag, 350);
+});
+document.addEventListener('pointermove', e => {
+  if(!DR) return;
+  if(!DR.drag){
+    const d = Math.hypot(e.clientX - DR.x0, e.clientY - DR.y0);
+    if(DR.touch){ if(d > 10) limpiarDrag(); }       // el dedo se mueve antes de tiempo: es un scroll
+    else if(d > 5) iniciarDrag();
+    return;
+  }
+  e.preventDefault(); moverGhost(e.clientX, e.clientY);
+});
+document.addEventListener('pointerup', e => {
+  if(!DR) return;
+  const d = DR, drag = d.drag, t = drag ? bajoPuntero(e.clientX, e.clientY) : null;
+  limpiarDrag();
+  if(drag){ if(t && t !== d.el) intercambiar(infoPl(d.el), infoPl(t)); else renderView(); }
+  else tocarNombre(d.el);
+});
+document.addEventListener('pointercancel', limpiarDrag);
+document.addEventListener('touchmove', e => { if(DR && DR.drag) e.preventDefault(); }, {passive: false});
+document.addEventListener('contextmenu', e => { if(e.target.closest && e.target.closest('.pl')) e.preventDefault(); });
 
 /* ---------------------------------------------------------------------
    Datos entrantes
