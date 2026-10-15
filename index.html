@@ -107,6 +107,8 @@ h1,h2,h3{font-family:var(--head);margin:0;letter-spacing:.005em;line-height:1.05
 .ronda h3{font-size:28px;font-weight:700}
 .ronda .rh{font-family:var(--head);font-size:22px;font-weight:600;color:var(--pri)}
 .ronda .desc{font-size:14px;color:var(--mut);flex-basis:100%}
+.ronda .desc.rpill{font-size:16px;color:var(--ink);background:color-mix(in srgb,var(--ball) 28%,var(--card));border:1px solid var(--ball);border-radius:10px;padding:6px 12px;flex-basis:auto}
+.ronda .desc.rpill b{font-weight:700;margin-right:4px}
 .matches{display:grid;gap:10px}
 @media(min-width:640px){.matches{grid-template-columns:1fr 1fr}}
 .match{padding:12px 14px;display:flex;flex-direction:column;gap:8px;border-left:5px solid var(--line)}
@@ -675,7 +677,7 @@ function vPartidos(){
     const juegan = new Set(delaRonda.flatMap(p => [...p.a, ...p.b]));
     const descJ = J.filter(j => !juegan.has(j.id)), desc = descJ.map(j => j.nombre);
     const hora = delaRonda.find(p => p.hora);
-    h += `<div class="ronda"><h3>Ronda ${r}</h3>${hora ? `<span class="rh">${esc(hora.hora)}</span>` : ''}${desc.length ? `<span class="desc">Descansan: ${S.edit ? descJ.map(j => `<span class="pl rest ${S.sel && S.sel.pid === j.id && !S.sel.mid ? 'sel' : ''}" data-pid="${esc(j.id)}" data-mid="" data-ronda="${r}">${esc(nomN(j.id))}</span>`).join('') : esc(desc.join(', '))}</span>` : ''}</div><div class="matches">`;
+    h += `<div class="ronda"><h3>Ronda ${r}</h3>${hora ? `<span class="rh">${esc(hora.hora)}</span>` : ''}${desc.length ? `<span class="desc rpill"><b>${desc.length > 1 ? 'Descansan:' : 'Descansa:'}</b> ${S.edit ? descJ.map(j => `<span class="pl rest ${S.sel && S.sel.pid === j.id && !S.sel.mid ? 'sel' : ''}" data-pid="${esc(j.id)}" data-mid="" data-ronda="${r}">${esc(nomN(j.id))}</span>`).join('') : esc(desc.join(', '))}</span>` : ''}</div><div class="matches">`;
     h += visibles.map(cardPartido).join('') + '</div>';
   }
   if(!alguna) h += vacio('Nada que mostrar con este filtro');
